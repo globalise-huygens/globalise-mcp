@@ -214,8 +214,8 @@ importers:
         specifier: ^6.1.1
         version: 6.1.1
       srvx:
-        specifier: ^0.11.22
-        version: 0.11.22
+        specifier: ^1.0.8
+        version: 1.0.8
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -1104,8 +1104,8 @@ packages:
     resolution: {integrity: sha512-KGj/8Y43x35aZVDtt+J4mK1hoLGHULMYfSkODJNQjNDC3oW1PqPoxMwo0pLUsWM/UEGzON/NxeHywEfNXNP3Vw==}
     engines: {node: '>=0.10.0'}
 
-  srvx@0.11.22:
-    resolution: {integrity: sha512-LqZxxBDMKuMAZzFzJnDCkFOrs9MZQZr0LvHiO/SuSZVdQaXD7xQ5UWTUxheJrQPve1qk9MG2B/yttUvJxw8egQ==}
+  srvx@1.0.8:
+    resolution: {integrity: sha512-ngFS/J6St4PJfHRHGjr78xkPPtbyXtdMOLNE4x/XZunEK3OhV7aGUWMHf9WTUEy6wm1U0W4okkd82ZFFWRVQTw==}
     engines: {node: '>=20.16.0'}
     hasBin: true
 
@@ -1889,7 +1889,7 @@ snapshots:
 
   source-map-js@1.2.2: {}
 
-  srvx@0.11.22: {}
+  srvx@1.0.8: {}
 
   statuses@2.0.2: {}
 
