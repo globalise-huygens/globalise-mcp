@@ -17,6 +17,8 @@ cards). Indices behind this server are work in progress; fields are being added.
 - search_documents: full-text + structured search in the annotated transcriptions.
 - analyze_distribution: how a result set is spread over time, settlements, document types,
   professions and archive series, compared with the whole corpus (to correct for coverage bias).
+- count_mentions: how often the search terms occur in total (not how many documents), with the
+  spellings matched, mentions per decade normalised by corpus size, and the top documents.
 - search_reference_data: find persons, places, ships, organisations, polities, thesaurus concepts.
 - get_record: the full reference record (or document metadata) for any GLOBALISE id/URI.
 - get_document: a document's metadata, text (paged), tagged entities and scan list.
@@ -115,8 +117,12 @@ Report these to the user whenever they affect a conclusion.
   concepts for search, not as a historical claim.
 
 ## Search mechanics
-- Results are documents, not mentions. Totals above 10,000 are exact only when requested; paging
-  stops at 10,000 hits.
+- search_documents and analyze_distribution count documents; count_mentions counts occurrences.
+  Report which one a figure is. Mention totals are dominated by long registers and lists (one
+  muster roll can mention "soldaat" hundreds of times), so give per-document figures and the top
+  documents alongside totals. Above a threshold (default 500 documents) mention totals are
+  estimates from a random sample, reported with a 95% interval.
+- Document totals above 10,000 are exact only when requested; paging stops at 10,000 hits.
 - Relevance ranking is lexical (BM25), not semantic. There are no English translations yet.
 - The indices are work in progress and are rebuilt periodically; cite the index version that the
   tools report (e.g. annotated-documents.2026.11.05) together with document/scan ids.
@@ -161,8 +167,8 @@ export const WORKFLOW = `# Research workflow
    (e.g. peper/peeper, slaaf/slaven/slaeven, Coromandel/Choromandel/Cormandel).
 2. Resolve entities first with search_reference_data (place ids, person/ship records, thesaurus
    concepts), then search documents by id where possible; it is more complete than spelling.
-3. Gauge the size and shape of the evidence with analyze_distribution (always look at the
-   corpus-normalised share, not only raw counts).
+3. Gauge the size and shape of the evidence with analyze_distribution (documents) and
+   count_mentions (occurrences); always look at corpus-normalised figures, not only raw counts.
 4. Read: get_document for the text around hits (use the inline format to see tags), and follow
    linked records with get_record.
 5. Verify every quotation, name and number you report on the scan: get_scan with quote=... returns

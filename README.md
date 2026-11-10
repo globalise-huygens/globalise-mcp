@@ -16,6 +16,7 @@ persistent data at `data.globalise.huygens.knaw.nl`.
 | `globalise_about` | Built-in documentation: data model, limitations and bias, query syntax, research workflow |
 | `search_documents` | Full-text and structured search (entities by id, roles, event types, dates, settlement, inventory, document type, proximity) with highlighted snippets and viewer links |
 | `analyze_distribution` | Spread of a result set over decades, settlements, document types, professions, archive series, **normalised against the whole corpus** |
+| `count_mentions` | Total occurrences of the search terms (not documents): spellings matched, mentions per decade normalised by corpus size, top documents; exact up to 500–2,000 documents, otherwise a sample estimate with a 95% interval |
 | `search_reference_data` | Find persons, places, ships, organisations, polities and concepts by any spelling, with corpus mention counts |
 | `get_record` | Any record by id/URI, summarised: names, statuses, dates, sources, all linked records (to navigate the graph); inventories list their documents |
 | `get_document` | A document's metadata, text (plain or with inline tags), tagged entities, scans; can locate a quote among its scans |

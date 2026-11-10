@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseAnnotated, plainText, renderFragment, summariseEntities } from '../src/globalise/annotatedText.ts';
 import { documentContainsScan, documentScanIds, parseId, viewerUrlForDocument } from '../src/globalise/ids.ts';
 import { buildDocumentQuery, collectChips, parse } from '../src/globalise/query.ts';
+import { tallyFragments } from '../src/globalise/mentions.ts';
 import { locateQuote } from '../src/globalise/scan.ts';
 import { RateLimiter } from '../src/util/rateLimit.ts';
 
@@ -104,6 +105,19 @@ describe('locateQuote', () => {
 
   it('returns null when the passage is absent', () => {
     expect(locateQuote(words, 'peper en nagelen')).toBeNull();
+  });
+});
+
+describe('mention counting', () => {
+  it('counts highlighted spans by query term and by spelling', () => {
+    const tally = tallyFragments([
+      '[Caneel](_hit_term=annotatedText%3Acaneel*&type%3ADimension) en [caneelen](_hit_term=annotatedText%3Acaneel*)',
+      '[voor de kamer](_hit_term=voor+de+kamer) te [Amsterdam](_hit_term=placeId%3AGLOB2_937&type%3APlace&placeId%3AGLOB2_937) [peper](type%3ADimension)',
+    ]);
+    expect(tally.total).toBe(4);
+    expect(Object.fromEntries(tally.byTerm)).toEqual({ 'caneel*': 2, 'voor de kamer': 1, 'placeId:GLOB2_937': 1 });
+    expect(tally.bySurface.get('caneel')).toBe(1);
+    expect(tally.bySurface.get('caneelen')).toBe(1);
   });
 });
 

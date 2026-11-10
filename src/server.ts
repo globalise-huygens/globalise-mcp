@@ -4,6 +4,7 @@ import { registerScanViewer } from './apps/scanViewer.ts';
 import { SERVER_INSTRUCTIONS, TOPICS, type Topic } from './knowledge.ts';
 import { registerAnalyzeDistribution } from './tools/analyzeDistribution.ts';
 import { READ_ONLY } from './tools/common.ts';
+import { registerCountMentions } from './tools/countMentions.ts';
 import { registerGetDocument } from './tools/getDocument.ts';
 import { registerGetRecord } from './tools/getRecord.ts';
 import { registerGetScan } from './tools/getScan.ts';
@@ -33,6 +34,7 @@ export function createServer(): McpServer {
 
   registerSearchDocuments(server);
   registerAnalyzeDistribution(server);
+  registerCountMentions(server);
   registerSearchReferenceData(server);
   registerGetRecord(server);
   registerGetDocument(server);
