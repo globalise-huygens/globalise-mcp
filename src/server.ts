@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { registerScanViewer } from './apps/scanViewer.ts';
 import { SERVER_INSTRUCTIONS, TOPICS, type Topic } from './knowledge.ts';
 import { registerAnalyzeDistribution } from './tools/analyzeDistribution.ts';
 import { READ_ONLY } from './tools/common.ts';
@@ -36,6 +37,7 @@ export function createServer(): McpServer {
   registerGetRecord(server);
   registerGetDocument(server);
   registerGetScan(server);
+  registerScanViewer(server);
 
   for (const topic of topics) {
     server.registerResource(

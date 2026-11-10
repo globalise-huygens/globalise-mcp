@@ -31,13 +31,16 @@ particular query, such as "names matched by spelling, not id". Responses also in
 
 ## Use it
 
-Requires Node 24+.
+Uses pnpm (11.25.0, pinned in `package.json` like the portal) and Node 26. pnpm downloads Node 26
+for the project scripts if your system Node is older (`devEngines.runtime`). As in the portal,
+dependencies must be at least a week old (`minimumReleaseAge` in `pnpm-workspace.yaml`).
 
 ```bash
-npm install
-npm run smoke        # calls every tool against the live services
-npm test             # unit tests
-npm run inspect      # MCP Inspector UI
+pnpm install
+pnpm smoke           # calls every tool against the live services
+pnpm test            # unit tests
+pnpm typecheck
+pnpm inspect         # MCP Inspector UI
 ```
 
 ### Local (stdio): Claude Desktop, Claude Code, Cursor, VS Code
@@ -50,13 +53,16 @@ npm run inspect      # MCP Inspector UI
 }
 ```
 
+Use the full path to a Node 26 binary as `command` if `node` on your PATH is older; desktop apps
+often don't see your shell's PATH.
+
 Claude Code: `claude mcp add globalise -- node /path/to/globalise-mcp/src/stdio.ts`.
 Once published to npm, this becomes `npx -y @globalise/mcp`.
 
 ### Hosted (Streamable HTTP)
 
 ```bash
-npm run start:http   # http://localhost:3001/mcp, health at /healthz
+pnpm start:http      # serves http://localhost:3001/mcp, health check at /healthz
 ```
 
 Users add the URL (e.g. `https://mcp.globalise.nl/mcp`) as a custom/remote connector in their client.
@@ -76,7 +82,8 @@ src/
   util/                fetch with timeout + cache + concurrency cap, LRU cache, rate limiter
 ```
 
-The code uses the portal's conventions: ESM, strict TS, `.ts` imports, erasable syntax only, Node 24.
+The code uses the portal's conventions: pnpm, ESM, strict TS, `.ts` imports, erasable syntax only.
+It runs on Node 26.
 That means it runs without a build step and can move into the portal monorepo as `packages/mcp`.
 
 ## Deployment and load

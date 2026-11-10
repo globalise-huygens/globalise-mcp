@@ -1,0 +1,5 @@
+# Same dependency policy as globalise-research-portal.
+
+# Dependencies must be older than one week:
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true

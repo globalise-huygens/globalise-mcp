@@ -16,13 +16,13 @@
     "dist"
   ],
   "engines": {
-    "node": ">=24"
+    "node": ">=26"
   },
   "scripts": {
     "start": "node src/stdio.ts",
     "start:http": "node src/http.ts",
     "dev:http": "node --watch src/http.ts",
-    "inspect": "npx @modelcontextprotocol/inspector node src/stdio.ts",
+    "inspect": "pnpm dlx @modelcontextprotocol/inspector node src/stdio.ts",
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -35,12 +35,24 @@
   "homepage": "https://github.com/globalise-huygens/globalise-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
+    "openseadragon": "^6.1.1",
     "srvx": "^0.11.22",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^24.19.2",
+    "@types/node": "^26.6.5",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^26.12.0",
+      "onFail": "download"
+    },
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.25.0+sha512.5cde925b4f075f725eb71fbae18a42ffe784524789f19b61c731cb8721ec28aaee160e01a8d5af4fedb2a42cdbf300efe23db356b0d4a17b4d63e11f8ab7c956"
+    }
   }
 }

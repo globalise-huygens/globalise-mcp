@@ -1,9 +1,10 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
+import { scanViewerToolMeta } from '../apps/scanViewer.ts';
 import { config } from '../config.ts';
 import { esSearch } from '../globalise/es.ts';
-import { documentContainsScan, iiifImageUrl, parseId, scanRef, uriFor, viewerUrlForScan } from '../globalise/ids.ts';
+import { documentContainsScan, documentScanIds, iiifImageUrl, parseId, scanRef, uriFor, viewerUrlForScan } from '../globalise/ids.ts';
 import { fetchImageBase64, locateQuote, scanAnnotations, scanImage, scanTranscription } from '../globalise/scan.ts';
 import { CAVEATS, provenance, READ_ONLY, safe } from './common.ts';
 
@@ -32,6 +33,8 @@ export function registerGetScan(server: McpServer) {
         image_width: z.number().int().min(300).max(2000).default(1200).describe('Width in pixels of the returned image.'),
       },
       annotations: { ...READ_ONLY, title: 'Get scan' },
+      // Clients that support MCP Apps show the GLOBALISE viewer for this scan in the chat.
+      _meta: scanViewerToolMeta,
     },
     safe(async (args: Args): Promise<CallToolResult> => {
       const parsed = parseId(args.scan_id);
@@ -50,11 +53,20 @@ export function registerGetScan(server: McpServer) {
       const width = args.image_width ?? 1200;
       const cropUrl = located && image ? iiifImageUrl(image.service, { region: located.region, width: Math.min(width, 1600) }) : null;
 
+      const scansInDocument = document ? documentScanIds(document.document_id) : [];
+      const position = scansInDocument.indexOf(ref.scanId);
+
       const result = {
         scan_id: ref.scanId,
         uri: ref.canvasUri,
         inventory: ref.inventory,
         document,
+        navigation: {
+          position_in_document: position >= 0 ? position + 1 : null,
+          scans_in_document: scansInDocument.length || null,
+          previous_scan: position > 0 ? scansInDocument[position - 1] : null,
+          next_scan: position >= 0 && position < scansInDocument.length - 1 ? scansInDocument[position + 1] : null,
+        },
         viewer_url: viewerUrlForScan(ref.scanId),
         image: image ? { width: image.width, height: image.height, iiif_service: image.service, full: image.full, preview: image.preview, ...(cropUrl ? { quote_crop: cropUrl } : {}) } : null,
         ...(args.quote
