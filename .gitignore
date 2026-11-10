@@ -5,3 +5,8 @@ __MACOSX/
 .AppleDouble
 .LSOverride
 Icon[]
+
+# Node
+node_modules/
+dist/
+.env
