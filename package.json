@@ -1,0 +1,46 @@
+{
+  "name": "@globalise/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the GLOBALISE VOC archives: transcriptions, annotations and reference data",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "bin": {
+    "globalise-mcp": "./dist/stdio.js",
+    "globalise-mcp-http": "./dist/http.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/stdio.ts",
+    "start:http": "node src/http.ts",
+    "dev:http": "node --watch src/http.ts",
+    "inspect": "npx @modelcontextprotocol/inspector node src/stdio.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "smoke": "node scripts/smoke.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/globalise-huygens/globalise-mcp.git"
+  },
+  "homepage": "https://github.com/globalise-huygens/globalise-mcp#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "srvx": "^0.11.22",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
