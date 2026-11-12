@@ -43,7 +43,7 @@ export function registerSearchDocuments(server: McpServer) {
     {
       title: 'Search VOC documents',
       description:
-        'Search the GLOBALISE corpus of machine-transcribed VOC documents (1600–1806) by text, tagged entities, date, place of writing, inventory and document type. Returns documents with highlighted snippets (matches in «»), dates, ids and viewer links. The text is early-modern Dutch: search with period spellings and variants. Results are documents, not individual mentions.',
+        'Search the GLOBALISE corpus of machine-transcribed VOC documents (mostly 1605–1794) by text, tagged entities, date, place of writing, inventory and document type. Returns documents with highlighted snippets (matches in «»), dates, ids and viewer links. The text is early-modern Dutch: search with period spellings and variants. Results are documents, not individual mentions.',
       inputSchema: {
         ...documentFilterShape,
         sort: z.enum(['relevance', 'date_asc', 'date_desc']).default('relevance'),

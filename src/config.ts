@@ -14,6 +14,11 @@ export const config = {
   dataBase: env('GLOBALISE_DATA_BASE', 'https://data.globalise.huygens.knaw.nl/hdl:20.500.14722'),
   /** Research portal: scan viewer (/manifest/) and object cards (/object-card/). */
   portalBase: env('GLOBALISE_PORTAL_BASE', 'https://dev.globalise.nl'),
+  /**
+   * GLOBALISE website with the documentation (bias & limitations, how the data was produced, ...).
+   * TODO: points to the source files on GitHub until the website is live.
+   */
+  websiteBase: env('GLOBALISE_WEBSITE_BASE', 'https://github.com/globalise-huygens/globalise-portal-content/blob/main/pages'),
 
   /** Timeout for a single upstream request. */
   requestTimeoutMs: envInt('GLOBALISE_REQUEST_TIMEOUT_MS', 30_000),

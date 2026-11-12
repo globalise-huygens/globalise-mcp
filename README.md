@@ -66,7 +66,7 @@ Once published to npm, this becomes `npx -y @globalise/mcp`.
 pnpm start:http      # serves http://localhost:3001/mcp, health check at /healthz
 ```
 
-Users add the URL (e.g. `https://mcp.globalise.nl/mcp`) as a custom/remote connector in their client.
+Users add the URL (`https://globalise.nl/mcp` once hosted) as a custom/remote connector in their client.
 The endpoint is stateless, read-only and needs no authentication.
 
 ## Architecture
@@ -75,7 +75,8 @@ The endpoint is stateless, read-only and needs no authentication.
 src/
   server.ts            tool/resource/prompt registration (createServer)
   stdio.ts, http.ts    entry points; fetchHandler.ts = Web-standard Request→Response handler
-  knowledge.ts         data model, limitations, query syntax, workflow (served to the model)
+  knowledge.ts         data model, limitations, query syntax, workflow (served to the model);
+                       summarises and links to the GLOBALISE website, which is the source of truth
   tools/               one file per tool
   globalise/           domain logic: ids & links, ES client, query language (port of
                        globalise-search/unified), annotated-text parsing, Linked Art summaries,
