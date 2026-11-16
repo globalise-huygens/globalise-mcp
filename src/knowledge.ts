@@ -49,6 +49,8 @@ The search indices behind this server are work in progress; fields are being add
   professions and archive series, compared with the whole corpus (to correct for coverage bias).
 - count_mentions: how often the search terms occur in total (not how many documents), with the
   spellings matched, mentions per decade normalised by corpus size, and the top documents.
+- corpus_statistics: live overview figures of the whole dataset (documents, scans, reference records,
+  tagged and linked annotations), and what cannot be counted yet.
 - search_reference_data: find persons, places, ships, organisations, polities, thesaurus concepts.
 - browse_concepts: the thesaurus as a tree (vocabularies → concepts → narrower concepts), with how
   often each concept is used for persons and documents.
@@ -97,7 +99,9 @@ TEXT ANNOTATIONS (inside annotatedText)
    CorrespondenceEvent, PhysicalLocativeStatus, SocialRelationStatus, ...).
  - Entity types describe the form of the words, not what they refer to: a place name is tagged as
    a place even when, in context, it stands for a ruler or a state.
- - placeId → PLACE record (place-objects). Only part of the place mentions are linked.
+ - placeId → PLACE record (place-objects). Most place mentions carry a link (corpus_statistics gives
+   the current figures), but links are automatic: adjectives ("Portugese") and misread words can be
+   linked, and the linked record is not always the intended place.
  - personId → a THESAURUS concept for the person's ROLE/PROFESSION at that spot (e.g. koopman),
    NOT a person record. Named persons, ships, organisations and polities are NOT linked by id in
    the text yet; they can only be found by matching their recorded spellings.
@@ -189,7 +193,9 @@ assistant" (${page('aiAssistant', 'checking-the-answers')}).
   present a tag as an established fact.
 - Event detection was one of the hardest tasks: events are described in many ways and often only
   implied. Treat event tags with particular care.
-- Current index (this server): only some place mentions are linked to a place record (placeId).
+- Current index (this server): most place mentions are linked to a place record (placeId), but the
+  linking is automatic: demonyms/adjectives and HTR misreadings are linked too, and a link can point
+  to the wrong place. Check links on the scan before relying on them.
   Person mentions carry a role concept (personId), not the identity of the person. Named persons,
   ships, organisations and polities are matched by spelling only: homonyms (e.g. ships named after
   common words, or several ships with the same name) produce false hits, unrecorded spellings

@@ -31,7 +31,7 @@ const escapeWildcard = (value: string) => value.replace(/([\\*?])/g, '\\$1');
 const percent = (part: number, whole: number) => (whole ? Math.round((part / whole) * 1000) / 10 : 0);
 
 export const PERSONS_CAVEAT =
-  'Person records are reference data, not a census: most (about 670,000 with status "Contractant") are Company employees from muster-roll data, so counts show who the Company recorded and how it classified them. The index has no dates, so periods cannot be compared here; dates are in the individual records (get_record).';
+  'Person records are reference data, not a census: most (status "Contractant") are Company employees from muster-roll data, so counts show who the Company recorded and how it classified them. The index has no dates, so periods cannot be compared here; dates are in the individual records (get_record).';
 
 export function registerAnalyzePersons(server: McpServer) {
   server.registerTool(
@@ -39,7 +39,7 @@ export function registerAnalyzePersons(server: McpServer) {
     {
       title: 'Analyse person records by occupation, status or identity',
       description:
-        'Counts the GLOBALISE person records (about 730,000) by thesaurus classification: occupation, status or identity. Filter by classifications and/or name, group by the concepts directly below a concept (under; default: the top level), and optionally cross-tabulate with a second dimension. Drill down by passing a bucket id as under. Use browse_concepts to see the hierarchy. Returns counts, shares, how many persons fall outside the listed groups, and sample persons to check.',
+        'Counts the GLOBALISE person records by thesaurus classification: occupation, status or identity. Filter by classifications and/or name, group by the concepts directly below a concept (under; default: the top level), and optionally cross-tabulate with a second dimension. Drill down by passing a bucket id as under. Use browse_concepts to see the hierarchy. Returns counts, shares, how many persons fall outside the listed groups, and sample persons to check.',
       inputSchema: {
         group_by: z.enum(DIMENSIONS).default('occupation').describe('Classification to count by.'),
         under: z.string().optional().describe('Concept id or label: group by its narrower concepts (e.g. "Militaire beroepen"). Default: the top level of the group_by hierarchy.'),

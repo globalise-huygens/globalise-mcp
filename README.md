@@ -17,6 +17,7 @@ persistent data at `data.globalise.huygens.knaw.nl`.
 | `search_documents` | Full-text and structured search (entities by id, roles, event types, dates, settlement, inventory, document type, proximity) with highlighted snippets and viewer links |
 | `analyze_distribution` | Spread of a result set over decades, settlements, document types, professions, archive series, **normalised against the whole corpus** |
 | `count_mentions` | Total occurrences of the search terms (not documents): spellings matched, mentions per decade normalised by corpus size, top documents; exact up to 500–2,000 documents, otherwise a sample estimate with a 95% interval |
+| `corpus_statistics` | Live overview figures: documents, scans, inventories, records per kind of reference data, documents with tags/linked places, optional mention estimates |
 | `search_reference_data` | Find persons, places, ships, organisations, polities and concepts by any spelling, with corpus mention counts |
 | `browse_concepts` | The thesaurus as a tree: vocabularies, concepts, broader/narrower, with usage counts for persons and documents |
 | `analyze_persons` | Count person records by occupation, status or identity: filters, drill-down by concept, cross-tabulation, sample persons |

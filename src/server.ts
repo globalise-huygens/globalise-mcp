@@ -6,6 +6,7 @@ import { registerAnalyzeDistribution } from './tools/analyzeDistribution.ts';
 import { registerAnalyzePersons } from './tools/analyzePersons.ts';
 import { registerBrowseConcepts } from './tools/browseConcepts.ts';
 import { READ_ONLY } from './tools/common.ts';
+import { registerCorpusStatistics } from './tools/corpusStatistics.ts';
 import { registerCountMentions } from './tools/countMentions.ts';
 import { registerGetDocument } from './tools/getDocument.ts';
 import { registerGetRecord } from './tools/getRecord.ts';
@@ -37,6 +38,7 @@ export function createServer(): McpServer {
   registerSearchDocuments(server);
   registerAnalyzeDistribution(server);
   registerCountMentions(server);
+  registerCorpusStatistics(server);
   registerSearchReferenceData(server);
   registerBrowseConcepts(server);
   registerAnalyzePersons(server);

@@ -24,7 +24,7 @@ export function provenance(sources: string[], caveats: string[], indexVersions?:
 
 export const CAVEATS = {
   htr: 'Texts are uncorrected machine transcriptions (HTR) of 17th–18th-century Dutch: expect misreadings and spelling variation; a missing hit is weak evidence.',
-  annotations: 'Entity and event tags are generated automatically and contain errors; only some place mentions are linked to place records.',
+  annotations: 'Entity and event tags are generated automatically and contain errors; place links are automatic too and can be wrong (adjectives and misread words are also linked).',
   names: 'Named persons, ships, organisations and polities are matched by spelling, not by id: homonyms cause false hits, unrecorded spellings cause misses.',
   roles: 'personId tags in the text are role/profession concepts (e.g. koopman), not links to person records.',
   coverage: 'The corpus is a colonial company archive with uneven coverage across time and places; compare against corpus totals before interpreting counts.',
