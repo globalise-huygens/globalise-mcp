@@ -6,6 +6,7 @@ import { esSearch } from '../globalise/es.ts';
 import { documentScanIds, parseId, uriFor, viewerUrlForDocument, viewerUrlForScan } from '../globalise/ids.ts';
 import { labelsFor } from '../globalise/lookup.ts';
 import { locateQuote, scanTranscription } from '../globalise/scan.ts';
+import { conceptLabels } from '../globalise/concepts.ts';
 import { CAVEATS, json, provenance, READ_ONLY, safe } from './common.ts';
 
 type Args = {
@@ -53,7 +54,7 @@ export function registerGetDocument(server: McpServer) {
       const entities = summariseEntities(segments, 30);
       const [placeLabels, roleLabels] = await Promise.all([
         labelsFor('places', entities.places.map((p) => p.placeId)),
-        labelsFor('concepts', entities.roles.map((r) => r.conceptId)),
+        conceptLabels(entities.roles.map((r) => r.conceptId)),
       ]);
 
       const scanIds = documentScanIds(parsed.id);

@@ -18,6 +18,8 @@ persistent data at `data.globalise.huygens.knaw.nl`.
 | `analyze_distribution` | Spread of a result set over decades, settlements, document types, professions, archive series, **normalised against the whole corpus** |
 | `count_mentions` | Total occurrences of the search terms (not documents): spellings matched, mentions per decade normalised by corpus size, top documents; exact up to 500–2,000 documents, otherwise a sample estimate with a 95% interval |
 | `search_reference_data` | Find persons, places, ships, organisations, polities and concepts by any spelling, with corpus mention counts |
+| `browse_concepts` | The thesaurus as a tree: vocabularies, concepts, broader/narrower, with usage counts for persons and documents |
+| `analyze_persons` | Count person records by occupation, status or identity: filters, drill-down by concept, cross-tabulation, sample persons |
 | `get_record` | Any record by id/URI, summarised: names, statuses, dates, sources, all linked records (to navigate the graph); inventories list their documents |
 | `get_document` | A document's metadata, text (plain or with inline tags), tagged entities, scans; can locate a quote among its scans |
 | `get_scan` | One page: normalised and diplomatic transcription, annotations, IIIF image, viewer link, and the image itself (whole page or **a crop around a quoted passage**) so the model and user can check the handwriting |

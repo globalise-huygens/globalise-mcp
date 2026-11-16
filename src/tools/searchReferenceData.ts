@@ -4,6 +4,7 @@ import { config, INDICES, type IndexKey } from '../config.ts';
 import { countBody, countOf, esMsearch, esSearch, splitTitles } from '../globalise/es.ts';
 import { objectCardUrl, uriFor, type EntityKind } from '../globalise/ids.ts';
 import { labelsFor } from '../globalise/lookup.ts';
+import { conceptLabels } from '../globalise/concepts.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 
 const KINDS = {
@@ -142,7 +143,7 @@ export function registerSearchReferenceData(server: McpServer) {
 
           if (key === 'persons') {
             const conceptIds = items.flatMap((i) => [...i.occupations, ...i.statuses, ...i.identities]);
-            const labels = await labelsFor('concepts', conceptIds);
+            const labels = await conceptLabels(conceptIds);
             for (const item of items) {
               for (const field of ['occupations', 'statuses', 'identities']) item[field] = item[field].map((id: string) => `${labels.get(id) ?? '?'} (${id})`);
             }

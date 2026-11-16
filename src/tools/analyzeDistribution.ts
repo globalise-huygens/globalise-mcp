@@ -2,7 +2,7 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { config } from '../config.ts';
 import { esSearch } from '../globalise/es.ts';
-import { labelsFor } from '../globalise/lookup.ts';
+import { conceptLabels } from '../globalise/concepts.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 import { buildFromArgs, documentFilterShape, type DocumentFilterArgs } from './documentFilters.ts';
 
@@ -105,7 +105,7 @@ export function registerAnalyzeDistribution(server: McpServer) {
         if (!dimensions.includes(dim)) continue;
         const buckets = r[dim]?.buckets ?? [];
         const ids = buckets.flatMap((b: any) => String(b.key).split('|'));
-        const labels = await labelsFor('concepts', ids);
+        const labels = await conceptLabels(ids);
         out[dim] = buckets.map((b: any) => {
           const corpusN = corpusCount(`${dim}_all`, b.key) || corpusCount(dim, b.key);
           return {

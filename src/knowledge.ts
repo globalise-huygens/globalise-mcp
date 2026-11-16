@@ -50,6 +50,10 @@ The search indices behind this server are work in progress; fields are being add
 - count_mentions: how often the search terms occur in total (not how many documents), with the
   spellings matched, mentions per decade normalised by corpus size, and the top documents.
 - search_reference_data: find persons, places, ships, organisations, polities, thesaurus concepts.
+- browse_concepts: the thesaurus as a tree (vocabularies → concepts → narrower concepts), with how
+  often each concept is used for persons and documents.
+- analyze_persons: count person records by occupation, status or identity, with filters, drill-down
+  and cross-tabulation (e.g. statuses of persons with a military occupation).
 - get_record: the full reference record (or document metadata) for any GLOBALISE id/URI.
 - get_document: a document's metadata, text (paged), tagged entities and scan list.
 - get_scan: one page: transcription, annotations, IIIF image (optionally the image itself, or a
@@ -263,7 +267,9 @@ export const WORKFLOW = `# Research workflow
 1. Clarify the question; translate key terms into period Dutch, with spelling variants
    (e.g. peper/peeper, slaaf/slaven/slaeven, Coromandel/Choromandel/Cormandel).
 2. Resolve entities first with search_reference_data (place ids, person/ship records, thesaurus
-   concepts), then search documents by id where possible; it is more complete than spelling.
+   concepts; browse_concepts shows the concept hierarchy), then search documents by id where
+   possible; it is more complete than spelling. For questions about groups of people as the
+   Company classified them, analyze_persons counts the person records.
 3. Gauge the size and shape of the evidence with analyze_distribution (documents) and
    count_mentions (occurrences); always look at corpus-normalised figures, not only raw counts.
 4. Read: get_document for the text around hits (use the inline format to see tags), and follow

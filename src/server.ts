@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { registerScanViewer } from './apps/scanViewer.ts';
 import { SERVER_INSTRUCTIONS, TOPICS, type Topic } from './knowledge.ts';
 import { registerAnalyzeDistribution } from './tools/analyzeDistribution.ts';
+import { registerAnalyzePersons } from './tools/analyzePersons.ts';
+import { registerBrowseConcepts } from './tools/browseConcepts.ts';
 import { READ_ONLY } from './tools/common.ts';
 import { registerCountMentions } from './tools/countMentions.ts';
 import { registerGetDocument } from './tools/getDocument.ts';
@@ -36,6 +38,8 @@ export function createServer(): McpServer {
   registerAnalyzeDistribution(server);
   registerCountMentions(server);
   registerSearchReferenceData(server);
+  registerBrowseConcepts(server);
+  registerAnalyzePersons(server);
   registerGetRecord(server);
   registerGetDocument(server);
   registerGetScan(server);
