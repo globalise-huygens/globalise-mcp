@@ -127,8 +127,8 @@ export function documentInventory(documentId: string): string | null {
 export function viewerUrlForScan(scanId: string): string | null {
   const ref = scanRef(scanId);
   if (!ref) return null;
-  const params = new URLSearchParams({ manifest: ref.manifestUri, canvas: ref.canvasUri });
-  return `${config.portalBase}/manifest/?${params}`;
+  const params = new URLSearchParams({ canvas: ref.canvasUri });
+  return `${config.portalBase}/manifest?${params}`;
 }
 
 export function viewerUrlForDocument(documentId: string): string | null {

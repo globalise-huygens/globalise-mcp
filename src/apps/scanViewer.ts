@@ -1,7 +1,7 @@
 // MCP App (MCP Apps extension): an interactive scan viewer shown in the chat when get_scan runs,
 // in clients that support MCP Apps (Claude, ChatGPT, VS Code).
 //
-// Framing the portal viewer (dev.globalise.nl) was tried first; Claude Desktop refuses nested
+// Framing the portal viewer (globalise.nl/manifest) was tried first; Claude Desktop refuses nested
 // frames, so this is a self-contained viewer: OpenSeadragon (inlined, same version as the portal)
 // on the IIIF image, the transcription beside it, the quoted passage highlighted in both, and
 // previous/next navigation through the document via get_scan.
@@ -68,6 +68,8 @@ export function viewerHtml(openSeadragon: string): string {
   button { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; cursor: pointer; }
   button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
   button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); font-weight: 600; }
+  button.primary:hover { color: var(--bg); filter: brightness(1.1); }
   #statusbar { display: flex; gap: 8px; align-items: baseline; padding: 3px 12px 6px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
   #status { flex: 1; min-width: 0; }
   #status.warn { color: var(--accent); }
@@ -101,7 +103,7 @@ export function viewerHtml(openSeadragon: string): string {
   <span class="controls">
     <button id="passage" hidden>Go to passage</button>
     <button id="expand" hidden title="Show larger">Expand</button>
-    <button id="open" hidden>Open in GLOBALISE</button>
+    <button id="open" class="primary" hidden title="Read this page with its transcription, annotations and translation in the GLOBALISE viewer">Open in GLOBALISE viewer ↗</button>
   </span>
 </header>
 <div id="statusbar"><span id="status">Starting…</span><button id="details" title="Show diagnostics">details</button></div>
@@ -332,7 +334,7 @@ document.addEventListener('securitypolicyviolation', function (e) { window.__dia
       if (result && result.isError) throw { message: (result.content && result.content[0] && result.content[0].text) || 'error' };
       render(result);
     } catch (error) {
-      status('Could not load ' + scanId + ': ' + (error && error.message || 'this client does not let the viewer call tools') + '. Use "Open in GLOBALISE" instead.', true);
+      status('Could not load ' + scanId + ': ' + (error && error.message || 'this client does not let the viewer call tools') + '. Use "Open in GLOBALISE viewer" instead.', true);
     }
   }
 

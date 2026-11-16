@@ -109,7 +109,7 @@ REFERENCE DATA (each has a persistent URI <data>/<kind>:<id> resolving to JSON-L
                      commodities, ...; broader/narrower hierarchy; Dutch + English labels.
 
 PORTAL LINKS
- - Viewer:      ${config.portalBase}/manifest/?manifest=<manifest uri>&canvas=<canvas uri>
+ - Viewer:      ${config.portalBase}/manifest?canvas=<canvas uri>
  - Object card: ${config.portalBase}/object-card/?uri=<record uri>
  (<data> = ${config.dataBase})
 
@@ -293,7 +293,12 @@ reconstructed documents and curated reference data. The texts are early-modern D
 spelling variation and HTR errors. Before substantive research, read globalise_about (topics
 data_model and limitations). Resolve entities to ids before searching, use analyze_distribution to
 judge coverage, verify quotes and numbers with get_scan, and always cite document/scan ids, viewer
-links and the index version. In every substantive answer, state the limitations that apply
+links and the index version. When you show or cite a scan, point the user to its GLOBALISE viewer link
+(viewer_url), which shows the scan with its transcription, annotations and translation; prefer it
+over a bare image or the in-chat scan viewer. In every substantive answer, state the limitations that apply
 (automatic transcription and annotation, the Company's perspective, partial and uneven coverage) and
 link the user to Bias & limitations (${page('biasAndLimitations')}) and to how to check your answers
-(${page('aiAssistant', 'checking-the-answers')})`;
+(${page('aiAssistant', 'checking-the-answers')}). In your first answer of a conversation that uses this
+server, include this content warning: "The Dutch East India Company archives (and consequently their transcriptions) and
+its document descriptions bear harmful and discriminatory language. They also record a wide range of
+events, intentions and perspectives that are violent and can cause distress."`;
