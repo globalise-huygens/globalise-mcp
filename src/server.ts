@@ -73,7 +73,7 @@ export function createServer(): McpServer {
 
 Work as follows:
 ${TOPICS.workflow}
-In the answer: separate what the sources say from your interpretation; cite document ids, scan ids, dates and viewer links for every claim; give the exact queries you used and the index version; quantify with corpus-normalised figures where you count; and end with the limitations that affect this answer (see globalise_about topic "limitations").`,
+In the answer: separate what the sources say from your interpretation; cite document ids, scan ids, dates and viewer links for every claim; include a "Research strategy" section with your route through the archives (tools, order, reasons) and the exact search terms, ids and filters you used, verbatim, plus the index version; answer from the tool results only, and mark anything from your own knowledge explicitly as not coming from the archives; quantify with corpus-normalised figures where you count; and end with the limitations that affect this answer (see globalise_about topic "limitations").`,
           },
         },
       ],

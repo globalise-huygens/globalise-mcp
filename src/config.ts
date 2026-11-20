@@ -12,7 +12,7 @@ export const config = {
   searchBase: env('GLOBALISE_SEARCH_BASE', 'https://search.globalise.nl'),
   /** Persistent identifiers of every data object (documents, scans, persons, places, ...). */
   dataBase: env('GLOBALISE_DATA_BASE', 'https://data.globalise.huygens.knaw.nl/hdl:20.500.14722'),
-  /** Research portal: scan viewer (/manifest) and object cards (/object-card/). */
+  /** Research portal: scan viewer (/hdl:20.500.14722/inventory:<inv>/<page>) and object cards (/object-card/). */
   portalBase: env('GLOBALISE_PORTAL_BASE', 'https://globalise.nl'),
   /**
    * GLOBALISE website with the documentation (bias & limitations, how the data was produced, ...).

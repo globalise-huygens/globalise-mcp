@@ -123,17 +123,46 @@ export function documentInventory(documentId: string): string | null {
   return DOCUMENT_RE.exec(documentId)?.[2] ?? SCAN_RE.exec(documentId)?.[2] ?? null;
 }
 
-/** Opens a scan in the GLOBALISE viewer (transcription next to the facsimile). */
+/**
+ * Opens a scan in the GLOBALISE viewer (transcription next to the facsimile). The path names the
+ * inventory and the scan's page number (NL-HaNA_1.04.02_1053_0002 → inventory:1053/0002); the
+ * manifest parameter tells the viewer which inventory to load and canvas names the scan in full.
+ * Same pattern as viewerUrl() in globalise-search (unified/api.js).
+ */
 export function viewerUrlForScan(scanId: string): string | null {
   const ref = scanRef(scanId);
   if (!ref) return null;
-  const params = new URLSearchParams({ canvas: ref.canvasUri });
-  return `${config.portalBase}/manifest?${params}`;
+  const page = scanId.split('_').pop()!;
+  const params = new URLSearchParams({ manifest: ref.manifestUri, canvas: ref.canvasUri });
+  return `${config.portalBase}/hdl:20.500.14722/inventory:${encodeURIComponent(ref.inventory)}/${page}?${params}`;
 }
 
-export function viewerUrlForDocument(documentId: string): string | null {
+/** A search to highlight in the viewer: `q` in the portal's syntax, `snippet` a piece of text around one hit. */
+export interface ViewerHighlight {
+  q: string;
+  snippet: string;
+}
+
+/**
+ * Opens a document in the viewer. Without a highlight: at its first scan. With one (as links from
+ * globalise.nl/search do): the viewer runs `q` on the document, highlights every hit, and opens the
+ * scan that holds `snippet`, marking that hit. No canvas is sent then, so the viewer finds the scan
+ * itself; if it can't place the snippet it says "Search result could not be located".
+ */
+export function viewerUrlForDocument(documentId: string, highlight?: ViewerHighlight | null): string | null {
   const first = documentScanIds(documentId)[0];
-  return first ? viewerUrlForScan(first) : null;
+  if (!first) return null;
+  if (!highlight?.q || !highlight.snippet) return viewerUrlForScan(first);
+  const ref = scanRef(first)!;
+  const params = new URLSearchParams({
+    q: highlight.q,
+    manifest: ref.manifestUri,
+    document: documentId,
+    documentId,
+    snippet: highlight.snippet,
+  });
+  const pages = documentId.split('_').pop()!;
+  return `${config.portalBase}/hdl:20.500.14722/inventory:${encodeURIComponent(ref.inventory)}/${pages}?${params}`;
 }
 
 /** The portal's object card for any reference record (person, place, ship, concept, ...). */

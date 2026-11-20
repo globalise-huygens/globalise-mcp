@@ -87,6 +87,62 @@ export function renderFragment(fragment: string, format: TextFormat = 'inline'):
 
 export const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
+// --- Highlighting in the GLOBALISE viewer -------------------------------------------------------
+// Ported from globalise-search (unified/proposal2/scans.js: hitQuery, snippetText).
+
+/** Drops annotation markup cut off at a fragment's edges ("…atavia](type%3APlace) van", "[Batavia](_hit_ter"). */
+function trimCutMarkup(fragment: string): string {
+  return fragment
+    .replace(/^([^[\]]*)\]\([^)]*\)/, '$1')
+    .replace(/^[^\s[\]()]*\)/, '')
+    .replace(/\[([^\]]*)\](\([^)]*)?$/, '$1')
+    .replace(/\[([^\]]*)$/, '$1');
+}
+
+const SNIPPET_CONTEXT = 30; // characters on each side of the hit, extended to whole words
+
+/**
+ * The viewer only locates a snippet that lies within one of its own highlight fragments around a
+ * hit, and those end elsewhere than ours, so whole fragments often fail. This returns a short piece
+ * of plain text around the fragment's first hit, or null when the fragment has no hit.
+ */
+export function viewerSnippet(fragment: string): string | null {
+  let text = '';
+  let hit: [number, number] | null = null;
+  for (const segment of parseAnnotated(trimCutMarkup(fragment))) {
+    if (typeof segment === 'string') {
+      text += segment;
+      continue;
+    }
+    if (!hit && segment.hit && segment.surface.trim()) hit = [text.length, text.length + segment.surface.length];
+    text += segment.surface;
+  }
+  if (!hit) return null;
+  const start = text.lastIndexOf(' ', Math.max(0, hit[0] - SNIPPET_CONTEXT)) + 1;
+  const after = text.indexOf(' ', Math.min(text.length, hit[1] + SNIPPET_CONTEXT));
+  return collapseWhitespace(text.slice(start, after < 0 ? text.length : after));
+}
+
+const MAX_HIT_TERMS = 20;
+
+/**
+ * The viewer's `q` is in the portal's search syntax, which our query syntax (entity ids, roles,
+ * proximity) doesn't translate to. So `q` is the words that were highlighted in the fragments,
+ * each quoted and joined by OR; the viewer highlights those words in the document.
+ */
+export function viewerHitQuery(fragments: string[]): string {
+  const terms = new Map<string, string>();
+  for (const fragment of fragments) {
+    for (const segment of parseAnnotated(fragment)) {
+      if (typeof segment === 'string' || !segment.hit) continue;
+      const text = collapseWhitespace(segment.surface);
+      const key = text.toLowerCase();
+      if (text && !terms.has(key) && terms.size < MAX_HIT_TERMS) terms.set(key, text);
+    }
+  }
+  return [...terms.values()].map((term) => `"${term.replace(/["\\]/g, '\\$&')}"`).join(' OR ');
+}
+
 export interface EntitySummary {
   places: Array<{ placeId: string; surfaces: string[]; count: number }>;
   roles: Array<{ conceptId: string; surfaces: string[]; count: number }>;

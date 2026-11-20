@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseAnnotated, plainText, renderFragment, summariseEntities } from '../src/globalise/annotatedText.ts';
 import { documentContainsScan, documentScanIds, parseId, viewerUrlForDocument } from '../src/globalise/ids.ts';
+import { viewerHitQuery, viewerSnippet } from '../src/globalise/annotatedText.ts';
 import { buildDocumentQuery, collectChips, parse } from '../src/globalise/query.ts';
 import { tallyFragments } from '../src/globalise/mentions.ts';
 import { locateQuote } from '../src/globalise/scan.ts';
@@ -32,7 +33,10 @@ describe('ids', () => {
     ]);
     expect(documentContainsScan('NL-HaNA_1.04.02_1968_0347-0350', 'NL-HaNA_1.04.02_1968_0349')).toBe(true);
     expect(documentContainsScan('NL-HaNA_1.04.02_1968_0347-0350', 'NL-HaNA_1.04.02_1969_0349')).toBe(false);
-    expect(viewerUrlForDocument('NL-HaNA_1.04.02_1968_0347-0350')).toContain('canvas%3ANL-HaNA_1.04.02_1968_0347');
+    const viewer = viewerUrlForDocument('NL-HaNA_1.04.02_1968_0347-0350')!;
+    expect(viewer).toContain('/hdl:20.500.14722/inventory:1968/0347?');
+    expect(viewer).toContain('manifest=https%3A%2F%2Fdata.globalise.huygens.knaw.nl%2Fhdl%3A20.500.14722%2Finventory%3A1968.manifest');
+    expect(viewer).toContain('canvas%3ANL-HaNA_1.04.02_1968_0347');
   });
 });
 
@@ -129,5 +133,30 @@ describe('RateLimiter', () => {
     expect(limiter.take('a', 0)).toBeGreaterThan(0);
     expect(limiter.take('b', 0)).toBe(0);
     expect(limiter.take('a', 30_000)).toBe(0);
+  });
+});
+
+describe('viewer highlighting', () => {
+  const fragment =
+    'atavia](type%3APlace) van de [Coopman](type%3APerson) gesonden naer [Amsterdam](_hit_term=placeId%3AGLOB2_937&type%3APlace&placeId%3AGLOB2_937) met het schip de [Peper](_hit_term=peper) ende andere goederen die men aldaer [verw';
+
+  it('builds q from the matched words and a short snippet around the first hit', () => {
+    expect(viewerHitQuery([fragment, '[peper](_hit_term=peper)'])).toBe('"Amsterdam" OR "Peper"');
+    const snippet = viewerSnippet(fragment)!;
+    expect(snippet).toContain('Amsterdam');
+    expect(snippet).not.toMatch(/[[\]()]/);
+    expect(snippet.length).toBeLessThan(100);
+    expect(viewerSnippet('geen [treffer](type%3APlace) hier')).toBeNull();
+  });
+
+  it('links the document with the highlight and without a canvas', () => {
+    const url = new URL(viewerUrlForDocument('NL-HaNA_1.04.02_1968_0347-0350', { q: '"Amsterdam"', snippet: 'naer Amsterdam met' })!);
+    expect(url.pathname).toBe('/hdl:20.500.14722/inventory:1968/0347-0350');
+    expect(url.searchParams.get('q')).toBe('"Amsterdam"');
+    expect(url.searchParams.get('document')).toBe('NL-HaNA_1.04.02_1968_0347-0350');
+    expect(url.searchParams.get('documentId')).toBe('NL-HaNA_1.04.02_1968_0347-0350');
+    expect(url.searchParams.get('snippet')).toBe('naer Amsterdam met');
+    expect(url.searchParams.get('manifest')).toContain('inventory:1968.manifest');
+    expect(url.searchParams.has('canvas')).toBe(false);
   });
 });

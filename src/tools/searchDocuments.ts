@@ -1,7 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import { config } from '../config.ts';
-import { renderFragment, type TextFormat } from '../globalise/annotatedText.ts';
+import { renderFragment, viewerHitQuery, viewerSnippet, type TextFormat } from '../globalise/annotatedText.ts';
 import { esSearch } from '../globalise/es.ts';
 import { uriFor, viewerUrlForDocument } from '../globalise/ids.ts';
 import { mentionsForDocuments, topEntries, type MentionTally } from '../globalise/mentions.ts';
@@ -43,7 +43,7 @@ export function registerSearchDocuments(server: McpServer) {
     {
       title: 'Search VOC documents',
       description:
-        'Search the GLOBALISE corpus of machine-transcribed VOC documents (mostly 1605–1794) by text, tagged entities, date, place of writing, inventory and document type. Returns documents with highlighted snippets (matches in «»), dates, ids and viewer links. The text is early-modern Dutch: search with period spellings and variants. Results are documents, not individual mentions.',
+        'Search the GLOBALISE corpus of machine-transcribed VOC documents (mostly 1605–1794) by text, tagged entities, date, place of writing, inventory and document type. Returns documents with highlighted snippets (matches in «»), dates, ids and viewer links; when there are text matches, the viewer link opens the scan of the first snippet with the matched words highlighted. The text is early-modern Dutch: search with period spellings and variants. Results are documents, not individual mentions.',
       inputSchema: {
         ...documentFilterShape,
         sort: z.enum(['relevance', 'date_asc', 'date_desc']).default('relevance'),
@@ -102,6 +102,8 @@ export function registerSearchDocuments(server: McpServer) {
         const s = hit._source;
         const series = s.archiveDescription?.split(' • ');
         const tally = mentions.get(s.id);
+        const documentId = s.identifier ?? hit._id;
+        const fragmentsOfHit = hit.highlight?.annotatedText ?? [];
         return {
           document_id: s.identifier ?? hit._id,
           title: s.title,
@@ -114,8 +116,8 @@ export function registerSearchDocuments(server: McpServer) {
           ...(tally
             ? { mentions: tally.total, spellings: topEntries(tally.bySurface, 5).map((e) => `${e.key} (${e.count})`) }
             : {}),
-          snippets: (hit.highlight?.annotatedText ?? []).map((f) => renderFragment(f, format)),
-          viewer_url: viewerUrlForDocument(s.identifier ?? hit._id),
+          snippets: fragmentsOfHit.map((f) => renderFragment(f, format)),
+          viewer_url: viewerUrlForDocument(documentId, viewerHighlight(fragmentsOfHit)),
           uri: uriFor('document', s.identifier ?? hit._id),
         };
       });
@@ -141,4 +143,11 @@ export function registerSearchDocuments(server: McpServer) {
       });
     }),
   );
+}
+
+/** Highlight for the viewer link: all matched words, and the first snippet that has a match. */
+function viewerHighlight(fragments: string[]) {
+  const q = viewerHitQuery(fragments);
+  const snippet = fragments.map(viewerSnippet).find(Boolean);
+  return q && snippet ? { q, snippet } : null;
 }

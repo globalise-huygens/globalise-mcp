@@ -117,7 +117,10 @@ REFERENCE DATA (each has a persistent URI <data>/<kind>:<id> resolving to JSON-L
                      commodities, ...; broader/narrower hierarchy; Dutch + English labels.
 
 PORTAL LINKS
- - Viewer:      ${config.portalBase}/manifest?canvas=<canvas uri>
+ - Viewer:      ${config.portalBase}/hdl:20.500.14722/inventory:<inventory>/<page>?manifest=<manifest uri>&canvas=<canvas uri>
+                (e.g. scan NL-HaNA_1.04.02_1053_0002 → inventory:1053/0002; tools return it as viewer_url).
+                search_documents' viewer_url also carries q, document, documentId and snippet: the
+                viewer then highlights the matched words and opens the scan of the first snippet.
  - Object card: ${config.portalBase}/object-card/?uri=<record uri>
  (<data> = ${config.dataBase})
 
@@ -268,6 +271,35 @@ Examples:
   (role:slaaf "verkocht")~8
 `;
 
+const RESEARCH_STRATEGY = `## Research strategy: always tell the user how you got there
+
+Every substantive answer includes a section "Research strategy" that lets the user retrace and
+repeat your route through the archives:
+ - The route: which tools you called, in what order, and why (e.g. resolved "Cochin" to place
+   GLOB2_… with search_reference_data → analyze_distribution by decade → search_documents →
+   get_document on the top hits → get_scan to verify the quotes).
+ - The exact search terms and filters of every search, verbatim as sent (query strings, entity
+   ids, roles, years, settlements, inventories, document types), including the spelling variants
+   you tried and the searches that found nothing or were dropped.
+ - Which hits you actually read and which you only saw as snippets or counts; how many results
+   there were and how many you looked at.
+ - The index version the tools reported.
+ - What you did not search, and searches that might change the answer.
+`;
+
+const OWN_KNOWLEDGE = `## Your own knowledge: restricted, and always flagged
+
+Answer from what the GLOBALISE tools return. Do not fill gaps with your own knowledge of VOC
+history, people, places, dates or numbers. Use it only where it is needed to search well (period
+spellings, variants, which terms to try) or to put sources in context, and keep that minimal.
+Whenever an answer contains anything that does not come from the tools (background, an
+identification, a date, an interpretation, a historiographical claim), mark it explicitly as your
+own knowledge, e.g. "(not from the archives: general background from my training data, unverified)",
+or put it in a separate section "Not from the archives". Never present it as a finding from the
+sources, and never cite a document for it. If the archives do not answer the question, say so
+rather than answering from memory.
+`;
+
 export const WORKFLOW = `# Research workflow
 
 1. Clarify the question; translate key terms into period Dutch, with spelling variants
@@ -282,12 +314,16 @@ export const WORKFLOW = `# Research workflow
    linked records with get_record.
 5. Verify every quotation, name and number you report on the scan: get_scan with quote=... returns
    a crop of the passage; give the user the viewer link.
-6. Report with citations: document id, scan id, date, viewer link, the queries used, the index
-   version. Keep what the sources say apart from your interpretation.
-7. End with the limitations that affect this answer (globalise_about topic "limitations"), and link
+6. Report with citations: document id, scan id, date, viewer link, the index version. Keep what
+   the sources say apart from your interpretation.
+7. Account for your research strategy (see below).
+8. Answer from the archives, not from memory (see below).
+9. End with the limitations that affect this answer (globalise_about topic "limitations"), and link
    the user to Bias & limitations (${page('biasAndLimitations')}) and to how to check your answer
    (${page('aiAssistant', 'checking-the-answers')}).
-`;
+
+${RESEARCH_STRATEGY}
+${OWN_KNOWLEDGE}`;
 
 export const TOPICS = {
   overview: OVERVIEW,
@@ -307,7 +343,12 @@ data_model and limitations). Resolve entities to ids before searching, use analy
 judge coverage, verify quotes and numbers with get_scan, and always cite document/scan ids, viewer
 links and the index version. When you show or cite a scan, point the user to its GLOBALISE viewer link
 (viewer_url), which shows the scan with its transcription, annotations and translation; prefer it
-over a bare image or the in-chat scan viewer. In every substantive answer, state the limitations that apply
+over a bare image or the in-chat scan viewer. In every substantive answer, include a "Research strategy"
+section: the route you took through the archives (which tools, in what order, why) and the exact search
+terms, ids and filters you used, verbatim, including variants and searches that found nothing. Answer from
+what the tools return, not from your own knowledge: use that only to search well or give minimal context,
+and whenever you do, mark it explicitly as not coming from the archives (e.g. a separate "Not from the
+archives" section); if the archives do not answer the question, say so. In every substantive answer, state the limitations that apply
 (automatic transcription and annotation, the Company's perspective, partial and uneven coverage) and
 link the user to Bias & limitations (${page('biasAndLimitations')}) and to how to check your answers
 (${page('aiAssistant', 'checking-the-answers')}). In your first answer of a conversation that uses this
