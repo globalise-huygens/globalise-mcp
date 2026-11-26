@@ -5,6 +5,7 @@ import type { IndexKey } from '../config.ts';
 import { LruCache } from '../util/cache.ts';
 import { esSearch, splitTitles } from './es.ts';
 import { parseId } from './ids.ts';
+import { MAX_SPAN_PLACES, resolveRegion, type RegionSpec } from './places.ts';
 import { type Chip, hasWildcard } from './query.ts';
 
 const labelCache = new LruCache<string | null>(20_000, 6 * 60 * 60_000);
@@ -55,6 +56,47 @@ export interface Resolution {
   input: string;
   resolvedTo?: string;
   method: string;
+  /** For regions: which places were used, and how. */
+  region?: RegionSummary;
+}
+
+export interface RegionSummary {
+  description: string;
+  places_in_region: number;
+  places_linked_in_text: number;
+  /** The places mentioned in most documents (documents across the whole corpus). */
+  top_linked_places: string[];
+  overlaps_followed?: string[];
+  notes?: string[];
+}
+
+/** Resolves a region to the place ids to search for, with an account for the user. */
+export async function regionIds(spec: RegionSpec, field = 'region'): Promise<{ ids: string[]; resolution: Resolution }> {
+  const region = await resolveRegion(spec);
+  const ids = region.linked.map((n) => n.id);
+  const summary: RegionSummary = {
+    description: region.description,
+    places_in_region: region.members.length,
+    places_linked_in_text: ids.length,
+    top_linked_places: region.linked.slice(0, 12).map((n) => `${n.label} (${n.id}): ${n.documents} documents`),
+    ...(region.overlapsFollowed.length
+      ? { overlaps_followed: region.overlapsFollowed.slice(0, 15).map((o) => `${o.from} overlaps ${o.to}`).concat(region.overlapsFollowed.length > 15 ? [`… ${region.overlapsFollowed.length - 15} more`] : []) }
+      : {}),
+    ...(region.notes.length ? { notes: region.notes } : {}),
+  };
+  if (!ids.length) {
+    throw new Error(`The region ${region.description} contains ${region.members.length} place record(s), but none of them is linked to mentions in the text, so no document can match. Try a larger region or explore_places to see what it contains.`);
+  }
+  return {
+    ids,
+    resolution: {
+      field,
+      input: JSON.stringify(spec),
+      resolvedTo: `${ids.length} place ids`,
+      method: 'region → every place record inside it (part-of hierarchy and/or coordinates) → mentions linked to any of those ids in the text',
+      region: summary,
+    },
+  };
 }
 
 /**
@@ -69,6 +111,17 @@ export async function resolveChips(chips: Chip[]): Promise<Resolution[]> {
       if (chip.id || hasWildcard(chip.value)) return;
       const parsed = parseId(chip.value);
       const named = NAMED_INDEX[chip.fieldKey];
+
+      if (chip.fieldKey === 'within') {
+        const { ids, resolution } = await regionIds({ within: chip.value }, 'within');
+        if (ids.length > MAX_SPAN_PLACES) {
+          resolution.region!.notes = [...(resolution.region!.notes ?? []), `Large region (${ids.length} places): inside a proximity group only the ${MAX_SPAN_PLACES} most mentioned places are used.`];
+        }
+        chip.ids = ids;
+        chip.id = chip.value;
+        notes.push(resolution);
+        return;
+      }
 
       if (chip.fieldKey === 'place') {
         if (parsed?.kind === 'place') {

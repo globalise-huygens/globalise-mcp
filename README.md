@@ -14,16 +14,24 @@ persistent data at `data.globalise.huygens.knaw.nl`.
 | Tool | Purpose |
 | --- | --- |
 | `globalise_about` | Built-in documentation: data model, limitations and bias, query syntax, research workflow |
-| `search_documents` | Full-text and structured search (entities by id, roles, event types, dates, settlement, inventory, document type, proximity) with highlighted snippets and viewer links |
-| `analyze_distribution` | Spread of a result set over decades, settlements, document types, professions, archive series, **normalised against the whole corpus** |
+| `search_documents` | Full-text and structured search (entities by id, roles, event types, dates, settlement, inventory, document type, proximity, **geographic region**) with highlighted snippets, the linked places of each document (with coordinates; optional GeoJSON) and viewer links |
+| `analyze_distribution` | Spread of a result set over decades, settlements, places mentioned, document types, professions, archive series, **normalised against the whole corpus** |
+| `map_documents` | The places mentioned in a result set on a **globe / map** (MCP App: Equal Earth or orthographic, drag, zoom, click a place to list its documents); coordinates, counts and rates per 1000 for clients without apps |
 | `count_mentions` | Total occurrences of the search terms (not documents): spellings matched, mentions per decade normalised by corpus size, top documents; exact up to 500–2,000 documents, otherwise a sample estimate with a 95% interval |
 | `corpus_statistics` | Live overview figures: documents, scans, inventories, records per kind of reference data, documents with tags/linked places, optional mention estimates |
 | `search_reference_data` | Find persons, places, ships, organisations, polities and concepts by any spelling, with corpus mention counts |
+| `explore_places` | Place geography: coordinates, part-of chains, contained, overlapping and nearby places; or every place in a region (within a place, bounding box, radius), with document counts |
 | `browse_concepts` | The thesaurus as a tree: vocabularies, concepts, broader/narrower, with usage counts for persons and documents |
 | `analyze_persons` | Count person records by occupation, status or identity: filters, drill-down by concept, cross-tabulation, sample persons |
 | `get_record` | Any record by id/URI, summarised: names, statuses, dates, sources, all linked records (to navigate the graph); inventories list their documents |
 | `get_document` | A document's metadata, text (plain or with inline tags), tagged entities, scans; can locate a quote among its scans |
 | `get_scan` | One page: normalised and diplomatic transcription, annotations, IIIF image, viewer link, and the image itself (whole page or **a crop around a quoted passage**) so the model and user can check the handwriting |
+
+Regions: `search_documents`, `analyze_distribution` and `count_mentions` take
+`region` = `{within: <place>}`, `{bbox: {south, west, north, east}}` or `{near: <place or "lat,lon">, radius_km}`
+(combined criteria are intersected), and the query language has `within:<place>`. A region is
+expanded, from the coordinates and part-of/overlap relations in `place-objects`, to the place ids
+that occur in the text. The place graph is loaded once and cached for 6 hours (`src/globalise/places.ts`).
 
 The server also exposes the documentation as MCP resources (`globalise://docs/…`) and a
 `research_question` prompt.

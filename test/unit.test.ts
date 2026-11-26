@@ -4,6 +4,7 @@ import { documentContainsScan, documentScanIds, parseId, viewerUrlForDocument } 
 import { viewerHitQuery, viewerSnippet } from '../src/globalise/annotatedText.ts';
 import { buildDocumentQuery, collectChips, parse } from '../src/globalise/query.ts';
 import { tallyFragments } from '../src/globalise/mentions.ts';
+import { broaderChains, buildPlaceGraph, distanceKm, inBox, parsePoint, placesInFragments, regionOf, resolvePlace } from '../src/globalise/places.ts';
 import { locateQuote } from '../src/globalise/scan.ts';
 import { RateLimiter } from '../src/util/rateLimit.ts';
 
@@ -158,5 +159,87 @@ describe('viewer highlighting', () => {
     expect(url.searchParams.get('snippet')).toBe('naer Amsterdam met');
     expect(url.searchParams.get('manifest')).toContain('inventory:1968.manifest');
     expect(url.searchParams.has('canvas')).toBe(false);
+  });
+});
+
+describe('places', () => {
+  const P = (id: string) => `https://id.globalise.nl/hdl:20.500.14722/place:${id}`;
+  const graph = buildPlaceGraph(
+    [
+      { id: 'CITY', source: { title: ['Calechut', 'Kozhikode'], place: [P('CITY_HUM_1'), P('ADMIN')], placeHierarchy: [P('ADMIN')], geoPoint: { lat: 11.258, lon: 75.777 } } },
+      { id: 'CITY_HUM_1', source: { title: ['Kozhikode (kingdom)'], place: [P('CITY'), P('KINGDOM')], placeHierarchy: [P('KINGDOM')], geoPoint: { lat: 11.258, lon: 75.777 } } },
+      { id: 'FORT', source: { title: ['Chettuva Fort'], place: [P('CITY_HUM_1')], placeHierarchy: [P('CITY_HUM_1')], geoPoint: { lat: 10.53, lon: 76.05 } } },
+      { id: 'FAR', source: { title: ['Batavia'], geoPoint: { lat: -6.13, lon: 106.82 } } },
+      { id: 'NOPOINT', source: { title: ['Nowhere'], placeHierarchy: [P('ADMIN')] } },
+    ],
+    { labels: new Map([['ADMIN', 'Kerala']]), documents: new Map([['CITY', 100], ['FORT', 3], ['FAR', 500], ['NOPOINT', 2]]) },
+  );
+
+  it('builds parents, children and symmetric overlaps; unindexed parents get their label', () => {
+    const admin = graph.nodes.get('ADMIN')!;
+    expect(admin).toMatchObject({ label: 'Kerala', indexed: false });
+    expect(admin.children.sort()).toEqual(['CITY', 'NOPOINT']);
+    expect(graph.nodes.get('CITY')!.overlaps).toEqual(['CITY_HUM_1']);
+    expect(graph.nodes.get('CITY_HUM_1')!.overlaps).toEqual(['CITY']);
+    expect(graph.nodes.get('CITY_HUM_1')!.children).toEqual(['FORT']);
+  });
+
+  it('expands within over the hierarchy and, optionally, overlapping places', () => {
+    const region = regionOf(graph, { within: 'Kerala' });
+    expect(region.members.map((n) => n.id).sort()).toEqual(['ADMIN', 'CITY', 'CITY_HUM_1', 'FORT', 'NOPOINT']);
+    expect(region.linked.map((n) => n.id)).toEqual(['CITY', 'FORT', 'NOPOINT']);
+    expect(region.overlapsFollowed).toHaveLength(1);
+    const strict = regionOf(graph, { within: 'ADMIN', follow_overlaps: false });
+    expect(strict.linked.map((n) => n.id)).toEqual(['CITY', 'NOPOINT']);
+  });
+
+  it('selects by box and radius, and intersects criteria', () => {
+    expect(regionOf(graph, { bbox: { south: 5, west: 70, north: 15, east: 80 } }).linked.map((n) => n.id)).toEqual(['CITY', 'FORT']);
+    expect(regionOf(graph, { near: 'Kozhikode', radius_km: 10 }).linked.map((n) => n.id)).toEqual(['CITY']);
+    expect(regionOf(graph, { near: '11.2,75.8', radius_km: 200, within: 'ADMIN', follow_overlaps: false }).linked.map((n) => n.id)).toEqual(['CITY']);
+  });
+
+  it('resolves names, ids and URIs; rejects unknown places', () => {
+    expect(resolvePlace(graph, 'kozhikode').node.id).toBe('CITY');
+    expect(resolvePlace(graph, P('FORT')).node.id).toBe('FORT');
+    expect(() => resolvePlace(graph, 'Atlantis')).toThrow(/No place named/);
+  });
+
+  it('walks up the hierarchy from the place and its overlapping senses', () => {
+    expect(broaderChains(graph, 'FORT').map((c) => c.chain.map((n) => n.id).join('>'))).toEqual(['FORT>CITY_HUM_1>KINGDOM']);
+    expect(broaderChains(graph, 'CITY').map((c) => c.chain.map((n) => n.id).join('>'))).toEqual(['CITY>ADMIN', 'CITY_HUM_1>KINGDOM']);
+  });
+
+  it('geometry helpers', () => {
+    expect(Math.round(distanceKm({ lat: 0, lon: 0 }, { lat: 0, lon: 1 }))).toBe(111);
+    expect(inBox({ lat: 0, lon: 179 }, { south: -1, west: 170, north: 1, east: -170 })).toBe(true);
+    expect(inBox({ lat: 0, lon: 0 }, { south: -1, west: 170, north: 1, east: -170 })).toBe(false);
+    expect(parsePoint('-6.13, 106.82')).toEqual({ lat: -6.13, lon: 106.82 });
+    expect(parsePoint('Batavia')).toBeNull();
+  });
+
+  it('compiles within: to a terms clause, and to span_or inside proximity', () => {
+    const tree = parse('(within:Kerala peper)~10 within:Kerala');
+    for (const chip of collectChips(tree)) chip.ids = ['CITY', 'FORT'];
+    const query = JSON.stringify(buildDocumentQuery(tree, []));
+    expect(query).toContain('"terms":{"annotatedText":["placeId:CITY","placeId:FORT"]}');
+    expect(query).toContain('"span_or":{"clauses":[{"span_term":{"annotatedText":"placeId:CITY"}}');
+  });
+
+  it('reads linked places and their spellings from highlight fragments', () => {
+    const fragments = [
+      '[Cochim](_hit_term=annotatedText%3AplaceId%3A*&type%3APlace&placeId%3AGLOB_299)',
+      '[cochim](_hit_term=annotatedText%3AplaceId%3A*&type%3APlace&placeId%3AGLOB_299)',
+      '[Ceijlon](_hit_term=annotatedText%3AplaceId%3A*&type%3APlace&placeId%3AGLOB_800) [Coopman](type%3APerson)',
+    ];
+    expect(placesInFragments(fragments)).toEqual([
+      { id: 'GLOB_299', mentions: 2, spellings: ['Cochim', 'cochim'] },
+      { id: 'GLOB_800', mentions: 1, spellings: ['Ceijlon'] },
+    ]);
+  });
+
+  it('recognises admin-region and NR place ids', () => {
+    expect(parseId('NEW_ADMIN_1076')?.kind).toBe('place');
+    expect(parseId('NR_36')?.kind).toBe('place');
   });
 });

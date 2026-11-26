@@ -70,6 +70,7 @@ export function registerCountMentions(server: McpServer) {
         ...(exact ? {} : { breakdowns_note: 'by_query_term, spellings_found and top_documents are based on the sample.' }),
         what_counts: WHAT_COUNTS,
         query_interpretation: built.resolutions,
+        ...(built.placeExplanation ? { place_search_explanation: built.placeExplanation } : {}),
         provenance: provenance(
           [`${config.searchBase}/documents/_search`],
           [...built.caveats, 'HTR errors hide some occurrences; long registers and lists can dominate totals, so also look at per-document figures and top_documents.'],

@@ -5,6 +5,7 @@ import { variantsFor } from '../globalise/lookup.ts';
 import { countBody, countOf, esMsearch, esSearch } from '../globalise/es.ts';
 import { manifestUri, objectCardUrl, parseId, uriFor, viewerUrlForDocument } from '../globalise/ids.ts';
 import { recordProperty, summariseRecord } from '../globalise/linkedart.ts';
+import { broaderChains, placeGraph } from '../globalise/places.ts';
 import { inventoryInfo } from '../globalise/scan.ts';
 import { fetchJson } from '../util/http.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
@@ -65,6 +66,7 @@ export function registerGetRecord(server: McpServer) {
       const indexNames = index ? await variantsFor(index, parsed.id) : [];
       const names = [...new Set([...indexNames, ...summary.names.filter((n) => !/ Identified by |^(Person|GLOB|ORG|Polity|gzm)_/.test(n))])];
       const usage = await usageFor(parsed.kind, parsed.id, names);
+      const place = parsed.kind === 'place' ? await placeContext(parsed.id) : null;
 
       return json({
         kind: parsed.kind,
@@ -72,6 +74,7 @@ export function registerGetRecord(server: McpServer) {
         label: indexNames[0] ?? summary.label,
         names,
         ...(usage ? { corpus_usage: usage } : {}),
+        ...(place ? { place_context: place } : {}),
         links: {
           object_card: parsed.kind === 'document' ? undefined : objectCardUrl(parsed.uri),
           viewer: parsed.kind === 'document' ? viewerUrlForDocument(parsed.id) : undefined,
@@ -150,5 +153,21 @@ async function inventorySummary(inventory: string) {
     })),
     provenance: provenance([manifestUri(inventory), `${config.searchBase}/documents/_search`], [CAVEATS.documents], [await indexVersion('documents')]),
     uri: uriFor('inventory', inventory),
+  };
+}
+
+/** Where a place sits among the others: coordinates, part of, contains, overlaps. */
+async function placeContext(id: string): Promise<Record<string, unknown> | null> {
+  const graph = await placeGraph().catch(() => null);
+  const node = graph?.nodes.get(id);
+  if (!graph || !node) return null;
+  const name = (p: string) => `${graph.nodes.get(p)?.label ?? p} (${p})`;
+  return {
+    ...(node.point ? { coordinates: node.point } : { coordinates: null }),
+    part_of: node.parents.map(name),
+    broader_chains: broaderChains(graph, id).map((c) => c.chain.map((n) => `${n.label} (${n.id})`).join(' → ')),
+    contains_directly: node.children.length,
+    overlaps: node.overlaps.map(name),
+    more: `explore_places with place="${id}" lists contained and nearby places with document counts`,
   };
 }

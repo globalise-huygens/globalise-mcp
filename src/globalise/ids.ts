@@ -4,7 +4,7 @@
 //   scan      NL-HaNA_1.04.02_1968_0347        one page image (IIIF canvas) in inventory 1968
 //   inventory 1968                             one archival volume = one IIIF manifest
 //   person    Person_100901                    entity records (reference data)
-//   place     GLOB2_937, GLOB_126, GLOB_RT_233
+//   place     GLOB2_937, GLOB_126, GLOB_RT_233, NR_36, NEW_ADMIN_1076 (modern admin region)
 //   group     ORG_1                            organisations
 //   polity    Polity_100
 //   ship      gzm_ship0511                     ships; voyages are gzm_voyage0511
@@ -66,7 +66,7 @@ function guessKind(id: string): EntityKind | null {
   if (DOCUMENT_RE.test(id)) return 'document';
   if (SCAN_RE.test(id)) return 'scan';
   if (/^Person_\w+$/i.test(id)) return 'person';
-  if (/^GLOB[\w]*_\w+$/.test(id)) return 'place';
+  if (/^(GLOB[\w]*|NR|NEW_ADMIN[A-Z_]*)_\w+$/.test(id)) return 'place';
   if (/^ORG_\w+$/i.test(id)) return 'group';
   if (/^Polity_\w+$/i.test(id)) return 'polity';
   if (/ship\w*$/i.test(id) && /^gzm_ship/i.test(id)) return 'ship';

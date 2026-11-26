@@ -28,6 +28,7 @@ export const CAVEATS = {
   names: 'Named persons, ships, organisations and polities are matched by spelling, not by id: homonyms cause false hits, unrecorded spellings cause misses.',
   roles: 'personId tags in the text are role/profession concepts (e.g. koopman), not links to person records.',
   coverage: 'The corpus is a colonial company archive with uneven coverage across time and places; compare against corpus totals before interpreting counts.',
+  regions: 'Regions are built from the place records: coordinates are single points (no boundaries; a large region such as a kingdom or island has one point), "part of" relations are recorded for only some places, and places without coordinates never fall inside a box or radius. Only mentions linked to a place id are found; unlinked or mislinked mentions are missed. Check region.top_linked_places in query_interpretation.',
   documents: 'Document boundaries, titles and dates are partly automatically derived; dates can be year-level approximations.',
   referenceData: 'Reference records are compiled from several sources and may be incomplete or undisambiguated; check the cited sources.',
   verify: 'Verify quotations, names and numbers on the scan (get_scan with quote=...) before relying on them.',

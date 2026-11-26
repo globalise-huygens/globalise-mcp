@@ -45,13 +45,21 @@ The search indices behind this server are work in progress; fields are being add
 
 ## Tools
 - search_documents: full-text + structured search in the annotated transcriptions.
-- analyze_distribution: how a result set is spread over time, settlements, document types,
-  professions and archive series, compared with the whole corpus (to correct for coverage bias).
+- analyze_distribution: how a result set is spread over time, settlements, places mentioned,
+  document types, professions and archive series, compared with the whole corpus (to correct for coverage bias).
 - count_mentions: how often the search terms occur in total (not how many documents), with the
   spellings matched, mentions per decade normalised by corpus size, and the top documents.
 - corpus_statistics: live overview figures of the whole dataset (documents, scans, reference records,
   tagged and linked annotations), and what cannot be counted yet.
 - search_reference_data: find persons, places, ships, organisations, polities, thesaurus concepts.
+- explore_places: the geography of the place records: a place's coordinates, what it is part of,
+  what it contains, what overlaps it and what lies near it; or every place in a region (a place to
+  look inside, a bounding box, or a radius), with document counts.
+- map_documents: puts a search on a map: documents per place (with coordinates and rates per
+  1000), the region outline; opens an interactive globe/map in clients that support MCP Apps.
+  search_documents also lists the linked places of each document (with coordinates).
+- Geographic filters: search_documents, analyze_distribution and count_mentions take a region
+  (within a place, a bbox, or near a place/point with radius_km); the query language has within:.
 - browse_concepts: the thesaurus as a tree (vocabularies → concepts → narrower concepts), with how
   often each concept is used for persons and documents.
 - analyze_persons: count person records by occupation, status or identity, with filters, drill-down
@@ -110,11 +118,34 @@ REFERENCE DATA (each has a persistent URI <data>/<kind>:<id> resolving to JSON-L
  - person:Person_…   persons index: names (all spellings), occupations, statuses, identities
                      (thesaurus ids), relations; record: birth/death, events, sources (often a scan).
  - place:GLOB2_…     places: names, types, coordinates/approximation, part_of, sources.
+                     The place index (place-objects) holds per place: one coordinate point
+                     (geoPoint; no boundaries), types (thesaurus: city, island, kingdom, fort,
+                     region, ...), direct parents (placeHierarchy, "part of") and related places
+                     (place: the parents plus places that OVERLAP it). See PLACES below.
  - group:ORG_…       organisations (e.g. ORG_1 = the VOC), with classifications over time.
  - polity:Polity_…   polities (states, kingdoms), with sources.
  - ship:gzm_ship…    ships, with voyages (voyage:gzm_voyage…), type, ownership.
  - thesaurus:<uuid>  SKOS concepts: occupations, ranks, statuses, identities, document types,
                      commodities, ...; broader/narrower hierarchy; Dutch + English labels.
+
+PLACES: HOW THEY RELATE (explore_places shows all of this for one place or region)
+ - part of: Calicut (GLOB2_1010) → Kerala (NEW_ADMIN_1076). Chains can be several levels deep
+   (fort → kingdom → kingdom). Only part of the places have a parent; the hierarchy mixes
+   historical units (kingdoms, Company territories) with modern administrative regions.
+ - NEW_ADMIN_… are modern administrative regions (Kerala, Tamil Nadu, Maluku, ...). They have no
+   record of their own in the index and no coordinates; they exist as parents, which makes them
+   good regions to search within (region={"within": "NEW_ADMIN_1076"} or within:"Kerala").
+ - overlaps: one name, several records for its senses, e.g. Kozhikode the city (GLOB2_1010), the
+   kingdom (GLOB2_1010_HUM_1) and the Company settlement (GLOB2_1010_HUM_2). The text nearly
+   always links mentions to the base id (no _HUM_/_GEO_ suffix), while the political hierarchy is
+   often recorded on the _HUM_ senses. That is why region "within" follows overlaps by default.
+ - Linked in the text: only part of the place records are ever linked to a mention
+   (corpus_statistics place_records gives the current figures). GAVOC atlas places
+   (GLOB_GAVOC_…), NR_… records and most _HUM_/_GEO_ senses are not linked; they still help to
+   define regions.
+ - A region (within / bbox / near + radius_km) is expanded to the place records inside it and
+   matched as "the text mentions any of these place ids". Coordinates are points, so a box or
+   radius includes a kingdom or island only if its single point falls inside.
 
 PORTAL LINKS
  - Viewer:      ${config.portalBase}/hdl:20.500.14722/inventory:<inventory>/<page>?manifest=<manifest uri>&canvas=<canvas uri>
@@ -205,6 +236,20 @@ assistant" (${page('aiAssistant', 'checking-the-answers')}).
   produce misses. The "corpus mentions" annotation collections attached to reference records are
   incomplete; prefer search_documents with the entity id for coverage.
 
+## Places and regions (current index, this server)
+- Place coordinates are single points, sometimes approximate (the record says how certain); there
+  are no boundaries. A region defined by a box or radius therefore includes or excludes a large
+  unit (island, kingdom, coast) depending on where its one point lies. Some places have no
+  coordinates at all and never fall inside a box or radius (explore_places reports how many).
+- "Part of" relations exist for only part of the places and mix historical and modern units; a
+  region "within" a place misses places that were not assigned to it. For complete coverage of an
+  area, compare within with a bbox or radius.
+- Following overlapping places (other senses of a name) can widen a region: within Calicut
+  includes the kingdom of Calicut and so the places of that kingdom. query_interpretation lists
+  the overlaps followed; switch it off with follow_overlaps=false.
+- Region searches find mentions linked to a place id; unlinked and mislinked mentions are missed,
+  and "Malabar" or "Ceylon" may be linked where the text means the people or the government.
+
 ## Reference data
 - Compiled and checked by historians from many sources (existing VOC databases, literature, the
   transcriptions themselves). Curated, but not neutral: built mostly from colonial sources in Dutch
@@ -251,6 +296,9 @@ Free text (searched in the transcription, case-insensitive):
 Fields (can also be combined inside proximity groups):
   place:GLOB2_937           a place by id: every spelling tagged with that place
   place:Amster*             spelling tagged as a Place (no id; misses other spellings)
+  within:NEW_ADMIN_1076     any place in a region: the place and everything recorded as part of
+  within:"Kerala"           it (at any depth, following overlapping places); by id or name.
+                            Boxes and radii: use the region parameter (see below).
   person:Person_100901      a named person: all recorded spellings (by name, no id in text)
   person:"Jan Pietersz"     a literal name
   ship:gzm_ship0511         a ship by record id (all names); organisation:ORG_x; polity:Polity_x
@@ -269,6 +317,15 @@ Examples:
   (place:GLOB2_937 timmerman)~10
   annotation:Attack settlement:Ceylon year:1650-1660
   (role:slaaf "verkocht")~8
+  (within:"Kerala" peper)~10      pepper near any place in Kerala
+
+Region parameter (search_documents, analyze_distribution, count_mentions):
+  region={"within": "GLOB_405"}                          inside a place (as within:)
+  region={"near": "GLOB2_894", "radius_km": 50}          around a place (or "near": "-6.13,106.82")
+  region={"bbox": {"south": -9, "west": 105, "north": -5, "east": 115}}   a box (Java)
+  region_applies_to: "mentions" (default) | "place_of_writing" (settlement field, by name) | "either"
+  Check what a region contains with explore_places first; query_interpretation lists the places
+  used and the overlaps followed.
 `;
 
 const RESEARCH_STRATEGY = `## Research strategy: always tell the user how you got there
@@ -306,17 +363,25 @@ export const WORKFLOW = `# Research workflow
    (e.g. peper/peeper, slaaf/slaven/slaeven, Coromandel/Choromandel/Cormandel).
 2. Resolve entities first with search_reference_data (place ids, person/ship records, thesaurus
    concepts; browse_concepts shows the concept hierarchy), then search documents by id where
-   possible; it is more complete than spelling. For questions about groups of people as the
+   possible; it is more complete than spelling. For a region rather than one place (a coast, an
+   island group, a modern province, the area around a port), check it with explore_places and pass
+   it as region; one place id finds only mentions linked to that exact record. For questions about groups of people as the
    Company classified them, analyze_persons counts the person records.
 3. Gauge the size and shape of the evidence with analyze_distribution (documents) and
    count_mentions (occurrences); always look at corpus-normalised figures, not only raw counts.
 4. Read: get_document for the text around hits (use the inline format to see tags), and follow
    linked records with get_record.
+   When the user asks where something happened or wants a map or globe, use map_documents with
+   the same filters (it opens an interactive map where the client supports it; otherwise draw one
+   from the returned coordinates and say what the points mean).
 5. Verify every quotation, name and number you report on the scan: get_scan with quote=... returns
    a crop of the passage; give the user the viewer link.
 6. Report with citations: document id, scan id, date, viewer link, the index version. Keep what
    the sources say apart from your interpretation.
-7. Account for your research strategy (see below).
+7. Account for your research strategy (see below). When places or regions were involved (place:,
+   within:, region, settlement, place ids), explain to the user from place_search_explanation
+   which places and which kind of mentions were taken into account, which were not, and the
+   limitations that matter for the question.
 8. Answer from the archives, not from memory (see below).
 9. End with the limitations that affect this answer (globalise_about topic "limitations"), and link
    the user to Bias & limitations (${page('biasAndLimitations')}) and to how to check your answer
@@ -348,7 +413,7 @@ section: the route you took through the archives (which tools, in what order, wh
 terms, ids and filters you used, verbatim, including variants and searches that found nothing. Answer from
 what the tools return, not from your own knowledge: use that only to search well or give minimal context,
 and whenever you do, mark it explicitly as not coming from the archives (e.g. a separate "Not from the
-archives" section); if the archives do not answer the question, say so. In every substantive answer, state the limitations that apply
+archives" section); if the archives do not answer the question, say so. Whenever a search involves places or regions, tell the user which places and mentions it took into account and which it did not, and the place-data limitations, from the tool's place_search_explanation. In every substantive answer, state the limitations that apply
 (automatic transcription and annotation, the Company's perspective, partial and uneven coverage) and
 link the user to Bias & limitations (${page('biasAndLimitations')}) and to how to check your answers
 (${page('aiAssistant', 'checking-the-answers')}). In your first answer of a conversation that uses this

@@ -5,6 +5,8 @@ import { countBody, countOf, esMsearch, esSearch, splitTitles } from '../globali
 import { objectCardUrl, uriFor, type EntityKind } from '../globalise/ids.ts';
 import { labelsFor } from '../globalise/lookup.ts';
 import { conceptLabels } from '../globalise/concepts.ts';
+import { placeDataExplanation } from './placeExplanation.ts';
+import { normaliseName, placeGraph, placesMatching, type PlaceGraph } from '../globalise/places.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 
 const KINDS = {
@@ -139,6 +141,20 @@ export function registerSearchReferenceData(server: McpServer) {
                 note: `the corpus tags the spelling "${attested.get(id)?.surface}" with this place`,
               });
             }
+            const graph = await placeGraph().catch(() => null);
+            if (graph) {
+              // Regions only known as parents (modern administrative regions) have no index record.
+              for (const node of placesMatching(graph, text, limit).filter((n) => !n.indexed && !items.some((i) => i.id === n.id))) {
+                const exact = node.names.some((name) => normaliseName(name) === normaliseName(text));
+                items[exact ? 'unshift' : 'push']({
+                  id: node.id,
+                  names: node.names,
+                  uri: uriFor('place', node.id),
+                  note: `a region that ${node.children.length} place records are part of (no record of its own, never linked in the text); search inside it with region={"within":"${node.id}"}`,
+                });
+              }
+              await addPlaceContext(graph, items);
+            }
           }
 
           if (key === 'persons') {
@@ -157,8 +173,9 @@ export function registerSearchReferenceData(server: McpServer) {
       return json({
         query: text,
         results: out,
+        ...(out.places?.length ? { place_data_explanation: placeDataExplanation(false) } : {}),
         how_to_use:
-          'Pass ids to search_documents via entities=[…] (places and concepts match by id; persons/ships/organisations/polities by every recorded spelling), or open a record with get_record.',
+          'Pass ids to search_documents via entities=[…] (places and concepts match by id; persons/ships/organisations/polities by every recorded spelling), or open a record with get_record. For a place with the places inside or around it, use region={"within": id} or {"near": id, "radius_km": …}; explore_places shows its relations.',
         provenance: provenance(
           kinds.map((k) => `${config.searchBase}/${INDICES[KINDS[k].index]}/_search`),
           [CAVEATS.referenceData, CAVEATS.names, 'Mention counts are numbers of documents, not of mentions.'],
@@ -197,5 +214,20 @@ async function addMentionCounts(key: KindKey, items: Array<Record<string, any>>)
   items.forEach((item, i) => {
     item.documents_mentioning = countOf(responses[i]);
     item.count_method = key === 'places' ? 'documents with a place tag linked to this id' : key === 'concepts' ? 'documents using this concept as role tag, profession or document type' : 'documents containing any recorded name as a phrase (approximate; homonyms included)';
+  });
+}
+
+/** Coordinates, types and "part of" for place results, from the place graph. */
+async function addPlaceContext(graph: PlaceGraph, items: Array<Record<string, any>>) {
+  const nodes = items.map((item) => graph.nodes.get(item.id));
+  const types = await conceptLabels(nodes.flatMap((n) => n?.classifications ?? []));
+  items.forEach((item, i) => {
+    const node = nodes[i];
+    if (!node) return;
+    if (node.point) item.coordinates = { lat: node.point.lat, lon: node.point.lon };
+    if (node.classifications.length) item.types = node.classifications.map((c) => types.get(c) ?? c);
+    if (node.parents.length) item.part_of = node.parents.map((p) => `${graph.nodes.get(p)?.label ?? p} (${p})`);
+    if (node.children.length) item.contains_places = node.children.length;
+    if (node.overlaps.length) item.overlaps = node.overlaps.map((o) => `${graph.nodes.get(o)?.label ?? o} (${o})`);
   });
 }

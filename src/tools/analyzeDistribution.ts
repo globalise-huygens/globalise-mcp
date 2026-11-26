@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { config } from '../config.ts';
 import { esSearch } from '../globalise/es.ts';
 import { conceptLabels } from '../globalise/concepts.ts';
+import { hasRegion, placeCountsInResult, placeGraph, regionOf, type PlaceNode } from '../globalise/places.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 import { buildFromArgs, documentFilterShape, type DocumentFilterArgs } from './documentFilters.ts';
 
-const DIMENSIONS = ['decade', 'year', 'settlement', 'document_type', 'profession', 'archive_series'] as const;
+const DIMENSIONS = ['decade', 'year', 'settlement', 'place', 'document_type', 'profession', 'archive_series'] as const;
 type Dimension = (typeof DIMENSIONS)[number];
 
 type Args = DocumentFilterArgs & { dimensions?: Dimension[]; top?: number; archive_depth?: number };
@@ -45,10 +46,10 @@ export function registerAnalyzeDistribution(server: McpServer) {
     {
       title: 'Analyse how results are distributed',
       description:
-        'Shows how the documents matching a search (same filters as search_documents) are spread over decades/years, places of writing, document types, professions and archive series, next to the same breakdown for the whole corpus. per_1000_corpus_documents corrects for the very uneven coverage of the archive: use it, not raw counts, to compare periods or places.',
+        'Shows how the documents matching a search (same filters as search_documents) are spread over decades/years, places of writing, places mentioned (dimension "place": linked place tags; within the region when one is given, otherwise all linked places), document types, professions and archive series, next to the same breakdown for the whole corpus. per_1000_corpus_documents corrects for the very uneven coverage of the archive: use it, not raw counts, to compare periods or places.',
       inputSchema: {
         ...documentFilterShape,
-        dimensions: z.array(z.enum(DIMENSIONS)).min(1).max(6).default(['decade', 'settlement']),
+        dimensions: z.array(z.enum(DIMENSIONS)).min(1).max(7).default(['decade', 'settlement']),
         top: z.number().int().min(3).max(50).default(15).describe('Buckets per dimension (time dimensions are always complete).'),
         archive_depth: z.number().int().min(2).max(7).default(5).describe('Level in the archive hierarchy for archive_series (5 = series such as "Overgekomen brieven en papieren"; 7 ≈ inventory).'),
       },
@@ -94,6 +95,8 @@ export function registerAnalyzeDistribution(server: McpServer) {
         if (dimensions.includes('year')) out.year = series((y) => y, String).filter((b) => b.count > 0);
       }
 
+      if (dimensions.includes('place')) out.place = await placeDistribution(built.query, args, top);
+
       if (dimensions.includes('settlement')) {
         out.settlement = (r.settlement?.buckets ?? []).map((b: any) => {
           const corpusN = corpusCount('settlement_all', b.key) || corpusCount('settlement', b.key);
@@ -135,9 +138,10 @@ export function registerAnalyzeDistribution(server: McpServer) {
         corpus_documents: corpusTotal,
         share_of_corpus: `${rate(matched, corpusTotal)} per 1000`,
         query_interpretation: built.resolutions,
+        ...(built.placeExplanation ? { place_search_explanation: built.placeExplanation } : {}),
         distributions: out,
         how_to_read:
-          'count = matching documents in the bucket; corpus_count = all documents in that bucket; per_1000_corpus_documents normalises for coverage. Small corpus_counts make rates unstable. Documents are counted by their start date.',
+          'count = matching documents in the bucket; corpus_count = all documents in that bucket (for place: all documents mentioning that place); per_1000_corpus_documents normalises for coverage. Small corpus_counts make rates unstable. Documents are counted by their start date.',
         provenance: provenance([`${config.searchBase}/documents/_search`], [...built.caveats, CAVEATS.coverage], [await indexVersion('documents')]),
       });
     }),
@@ -155,4 +159,30 @@ function termsForAllKeys(aggs: Record<string, any>): Record<string, unknown> {
     extra[`${name}_all`] = { terms: { ...agg.terms, size: 2000 } };
   }
   return extra;
+}
+
+/**
+ * Places mentioned in the result set: one filters aggregation per 1000 candidate places. The
+ * candidates are the linked places of the region, or every linked place when there is no region.
+ * The baseline is the number of documents mentioning the place in the whole corpus.
+ */
+async function placeDistribution(query: Record<string, unknown>, args: Args, top: number) {
+  const graph = await placeGraph();
+  const candidates: PlaceNode[] = hasRegion(args.region) ? regionOf(graph, args.region).linked : [...graph.nodes.values()].filter((n) => n.documents > 0);
+  const counts = await placeCountsInResult(query, candidates);
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, top)
+    .map(([id, count]) => {
+      const node = graph.nodes.get(id)!;
+      return {
+        key: id,
+        label: node.label,
+        ...(node.point ? { lat: node.point.lat, lon: node.point.lon } : {}),
+        part_of: node.parents.map((p) => graph.nodes.get(p)?.label ?? p),
+        count,
+        corpus_count: node.documents,
+        per_1000_corpus_documents: rate(count, node.documents),
+      };
+    });
 }

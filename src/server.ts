@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { registerMapViewer } from './apps/mapViewer.ts';
 import { registerScanViewer } from './apps/scanViewer.ts';
 import { SERVER_INSTRUCTIONS, TOPICS, type Topic } from './knowledge.ts';
 import { registerAnalyzeDistribution } from './tools/analyzeDistribution.ts';
@@ -8,9 +9,11 @@ import { registerBrowseConcepts } from './tools/browseConcepts.ts';
 import { READ_ONLY } from './tools/common.ts';
 import { registerCorpusStatistics } from './tools/corpusStatistics.ts';
 import { registerCountMentions } from './tools/countMentions.ts';
+import { registerExplorePlaces } from './tools/explorePlaces.ts';
 import { registerGetDocument } from './tools/getDocument.ts';
 import { registerGetRecord } from './tools/getRecord.ts';
 import { registerGetScan } from './tools/getScan.ts';
+import { registerMapDocuments } from './tools/mapDocuments.ts';
 import { registerSearchDocuments } from './tools/searchDocuments.ts';
 import { registerSearchReferenceData } from './tools/searchReferenceData.ts';
 
@@ -38,14 +41,17 @@ export function createServer(): McpServer {
   registerSearchDocuments(server);
   registerAnalyzeDistribution(server);
   registerCountMentions(server);
+  registerMapDocuments(server);
   registerCorpusStatistics(server);
   registerSearchReferenceData(server);
+  registerExplorePlaces(server);
   registerBrowseConcepts(server);
   registerAnalyzePersons(server);
   registerGetRecord(server);
   registerGetDocument(server);
   registerGetScan(server);
   registerScanViewer(server);
+  registerMapViewer(server);
 
   for (const topic of topics) {
     server.registerResource(

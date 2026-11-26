@@ -3,7 +3,7 @@
 //
 // MAINTENANCE: the Globalise search indices are still being developed. When fields are added,
 // renamed or removed, update the definitions below (DOCUMENT_COUNTS, REFERENCE_INDICES,
-// PERSON_COUNTS, MENTION_ESTIMATES) and the NOT_AVAILABLE list, which tells the model what cannot
+// PERSON_COUNTS, MENTION_ESTIMATES, placeFigures) and the NOT_AVAILABLE list, which tells the model what cannot
 // be computed yet. Remove an entry from NOT_AVAILABLE once a figure becomes computable.
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -12,6 +12,7 @@ import { config, INDICES, type IndexKey } from '../config.ts';
 import { conceptSchemes } from '../globalise/concepts.ts';
 import { countBody, countOf, esMsearch, esSearch, type EsQuery } from '../globalise/es.ts';
 import { countEstimate } from '../globalise/mentions.ts';
+import { placeGraph } from '../globalise/places.ts';
 import { ANNOTATION_TYPES } from '../globalise/query.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 
@@ -57,7 +58,8 @@ const MENTION_ESTIMATES: Record<string, { query: EsQuery; description: string }>
 
 /** What the indices cannot answer yet, and why. Keep this in step with the indices. */
 const NOT_AVAILABLE = [
-  'Most-mentioned or most-linked places/roles across the corpus: tags are stored inside the text field, which cannot be aggregated. Count one id at a time with count_mentions or search_reference_data.',
+  'Most-used roles across the corpus: tags are stored inside the text field, which cannot be aggregated. Count one concept at a time with count_mentions or search_reference_data. (Places can be ranked, because their ids are known in advance: see place_records.most_mentioned and analyze_distribution dimension "place".)',
+  'Places mentioned in the text that have no record in the place index: their mentions cannot be ranked or put on a map.',
   'Linked mentions of persons, ships, organisations and polities: these are not linked by id in the text yet (only matched by spelling).',
   'Pages and languages per page: the index holds documents with a scan count, not pages with language.',
   'Person records over time: the persons index has no dates yet (see persons.with_dates).',
@@ -84,7 +86,7 @@ export function registerCorpusStatistics(server: McpServer) {
       const personKeys = Object.keys(PERSON_COUNTS);
       const types = args.annotation_types ? [...ANNOTATION_TYPES] : [];
 
-      const [overview, counts, schemes] = await Promise.all([
+      const [overview, counts, schemes, places] = await Promise.all([
         esSearch('documents', {
           size: 0,
           track_total_hits: true,
@@ -103,6 +105,7 @@ export function registerCorpusStatistics(server: McpServer) {
           ...types.map((type) => ({ index: 'documents' as const, body: countBody({ term: { [TEXT]: `type:${type}` } }) })),
         ]),
         conceptSchemes(),
+        placeFigures().catch(() => null),
       ]);
 
       let i = 0;
@@ -143,6 +146,7 @@ export function registerCorpusStatistics(server: McpServer) {
         reference_records: reference,
         concepts_per_vocabulary: schemes.sort((a, b) => b.concepts - a.concepts).map((s) => ({ id: s.id, vocabulary: s.label, concepts: s.concepts })),
         person_records: persons,
+        ...(places ? { place_records: places } : {}),
       };
 
       if (args.estimate_mentions) {
@@ -183,4 +187,25 @@ export function registerCorpusStatistics(server: McpServer) {
       });
     }),
   );
+}
+
+/** Place records: coordinates, hierarchy and linking, from the place graph (exact, all records). */
+async function placeFigures() {
+  const graph = await placeGraph();
+  const nodes = [...graph.nodes.values()];
+  const indexed = nodes.filter((n) => n.indexed);
+  const linked = indexed.filter((n) => n.documents > 0);
+  return {
+    records: indexed.length,
+    with_coordinates: indexed.filter((n) => n.point).length,
+    part_of_another_place: indexed.filter((n) => n.parents.length).length,
+    overlapping_another_place: indexed.filter((n) => n.overlaps.length).length,
+    regions_without_own_record: nodes.filter((n) => !n.indexed).length,
+    linked_in_text: linked.length,
+    linked_in_text_with_coordinates: linked.filter((n) => n.point).length,
+    linked_in_text_part_of_another_place: linked.filter((n) => n.parents.length).length,
+    most_mentioned: [...linked].sort((a, b) => b.documents - a.documents).slice(0, 10).map((n) => ({ id: n.id, label: n.label, documents: n.documents })),
+    note: 'linked_in_text = records that at least one text mention is linked to (placeId). Regions without own record (modern administrative regions, NEW_ADMIN_…) are only known as parents.',
+    index_version: graph.indexVersion,
+  };
 }

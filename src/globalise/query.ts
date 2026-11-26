@@ -4,13 +4,16 @@
 //   words, "exact phrases", wildcards (timmer*), fuzzy (timmerman~1)
 //   AND / OR / NOT and parentheses
 //   proximity: (amsterdam timmerman)~5, also with fields: (place:GLOB2_937 koopman)~10
-//   fields: place: role: profession: concept: annotation: documenttype: title: settlement:
+//   fields: place: within: role: profession: concept: annotation: documenttype: title: settlement:
 //           archive: inventory: year: person: ship: organisation: polity:
+
+import { anyPlaceClause, anyPlaceSpan, MAX_SPAN_PLACES } from './places.ts';
 
 const TEXT = 'annotatedText';
 
 export type FieldKey =
   | 'place'
+  | 'within'
   | 'person'
   | 'ship'
   | 'organisation'
@@ -28,6 +31,7 @@ export type FieldKey =
 
 const ALIASES: Record<string, FieldKey> = {
   place: 'place', location: 'place', plaats: 'place',
+  within: 'within', region: 'within', regio: 'within', binnen: 'within',
   person: 'person', name: 'person', personname: 'person', persoon: 'person',
   ship: 'ship', schip: 'ship',
   organisation: 'organisation', organization: 'organisation', org: 'organisation', group: 'organisation',
@@ -45,7 +49,7 @@ const ALIASES: Record<string, FieldKey> = {
 };
 
 /** Fields whose clause goes in the scored part of the query (they say *where* in the text). */
-const SCORED = new Set<FieldKey>(['place', 'person', 'ship', 'organisation', 'polity', 'role', 'annotation']);
+const SCORED = new Set<FieldKey>(['place', 'within', 'person', 'ship', 'organisation', 'polity', 'role', 'annotation']);
 
 export interface Chip {
   fieldKey: FieldKey;
@@ -54,6 +58,8 @@ export interface Chip {
   id?: string;
   /** Every recorded spelling of a named entity (persons, ships, organisations, polities). */
   variants?: string[];
+  /** within: the place ids of the region that occur in the text. */
+  ids?: string[];
 }
 
 export type ProxItem =
@@ -366,6 +372,8 @@ export function fieldClause(chip: Chip, mode: Mode = 'filter'): Record<string, u
   switch (chip.fieldKey) {
     case 'place':
       return chip.id ? annotationTerm('placeId', chip.id) : taggedSpan('type:Place', chip.value) ?? { match_none: {} };
+    case 'within':
+      return anyPlaceClause(chip.ids ?? []);
     case 'person':
     case 'ship':
     case 'organisation':
@@ -422,6 +430,7 @@ function proxItemSpan(item: ProxItem): Record<string, unknown> | null {
   const value = (item.value || '').trim();
   if (!value) return null;
   if (item.fieldKey === 'place') return item.id ? { span_term: { [TEXT]: `placeId:${item.id}` } } : taggedSpan('type:Place', value);
+  if (item.fieldKey === 'within') return anyPlaceSpan((item.ids ?? []).slice(0, MAX_SPAN_PLACES)) ?? { span_term: { [TEXT]: 'placeId:__none__' } };
   if (item.fieldKey === 'role' || item.fieldKey === 'profession' || item.fieldKey === 'concept') {
     return item.id ? { span_term: { [TEXT]: `personId:${item.id}` } } : taggedSpan('type:Person', value);
   }
