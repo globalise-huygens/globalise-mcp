@@ -18,7 +18,7 @@ import { registerSearchDocuments } from './tools/searchDocuments.ts';
 import { registerSearchReferenceData } from './tools/searchReferenceData.ts';
 
 export const SERVER_NAME = 'globalise';
-export const SERVER_VERSION = '0.1.0';
+export const SERVER_VERSION = '0.2.0';
 
 /** Builds a fully configured MCP server. Cheap enough to create per request in stateless HTTP mode. */
 export function createServer(): McpServer {

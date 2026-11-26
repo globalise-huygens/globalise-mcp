@@ -7,6 +7,7 @@ import { tallyFragments } from '../src/globalise/mentions.ts';
 import { broaderChains, buildPlaceGraph, distanceKm, inBox, parsePoint, placesInFragments, regionOf, resolvePlace } from '../src/globalise/places.ts';
 import { locateQuote } from '../src/globalise/scan.ts';
 import { RateLimiter } from '../src/util/rateLimit.ts';
+import { CAVEATS, provenance } from '../src/tools/common.ts';
 
 describe('ids', () => {
   it('recognises bare ids, prefixed ids and URIs', () => {
@@ -241,5 +242,11 @@ describe('places', () => {
   it('recognises admin-region and NR place ids', () => {
     expect(parseId('NEW_ADMIN_1076')?.kind).toBe('place');
     expect(parseId('NR_36')?.kind).toBe('place');
+  });
+});
+
+describe('provenance', () => {
+  it('lists each caveat once', () => {
+    expect(provenance([], [CAVEATS.regions, CAVEATS.htr, CAVEATS.regions]).caveats).toEqual([CAVEATS.regions, CAVEATS.htr]);
   });
 });

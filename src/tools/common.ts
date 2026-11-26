@@ -18,7 +18,8 @@ export function provenance(sources: string[], caveats: string[], indexVersions?:
     sources: [...new Set(sources)],
     ...(indexVersions?.length ? { index_versions: [...new Set(indexVersions)] } : {}),
     retrieved_at: new Date().toISOString(),
-    caveats,
+    // Tools combine caveat lists from several places; say each one once.
+    caveats: [...new Set(caveats)],
   };
 }
 
