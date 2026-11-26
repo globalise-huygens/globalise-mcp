@@ -13,4 +13,4 @@ const handler = createMcpFetchHandler({ path: process.env.MCP_PATH ?? '/mcp', re
 
 const server = serve({ port, hostname, fetch: handler });
 await server.ready();
-console.log(`GLOBALISE MCP server listening on http://${hostname}:${port}${process.env.MCP_PATH ?? '/mcp'}`);
+console.log(`Globalise MCP server listening on http://${hostname}:${port}${process.env.MCP_PATH ?? '/mcp'}`);

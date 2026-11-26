@@ -15,7 +15,7 @@ export const config = {
   /** Research portal: scan viewer (/hdl:20.500.14722/inventory:<inv>/<page>) and object cards (/object-card/). */
   portalBase: env('GLOBALISE_PORTAL_BASE', 'https://globalise.nl'),
   /**
-   * GLOBALISE website with the documentation (bias & limitations, how the data was produced, ...).
+   * Globalise website with the documentation (bias & limitations, how the data was produced, ...).
    * TODO: points to the source files on GitHub until the website is live.
    */
   websiteBase: env('GLOBALISE_WEBSITE_BASE', 'https://github.com/globalise-huygens/globalise-portal-content/blob/main/pages'),

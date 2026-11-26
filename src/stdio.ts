@@ -7,4 +7,4 @@ import { createServer } from './server.ts';
 
 const server = createServer();
 await server.connect(new StdioServerTransport());
-console.error('GLOBALISE MCP server running on stdio');
+console.error('Globalise MCP server running on stdio');

@@ -23,7 +23,7 @@ export function registerGetScan(server: McpServer) {
     {
       title: 'Look at a scan (page) and verify a passage',
       description:
-        'Returns one scanned page: its transcription (normalized = reading text; diplomatic = line-by-line HTR output), the entity/event annotations on it, the document it belongs to, the IIIF image URL and a link to open it in the GLOBALISE viewer (scan with transcription, annotations and translation; always offer this link to the user as the best place to read the page). Set quote to locate a passage on the page; set image to "quote" to receive a crop of that passage, or "page" to receive the whole page, so you can check the transcription against the handwriting yourself.',
+        'Returns one scanned page: its transcription (normalized = reading text; diplomatic = line-by-line HTR output), the entity/event annotations on it, the document it belongs to, the IIIF image URL and a link to open it in the Globalise viewer (scan with transcription, annotations and translation; always offer this link to the user as the best place to read the page). Set quote to locate a passage on the page; set image to "quote" to receive a crop of that passage, or "page" to receive the whole page, so you can check the transcription against the handwriting yourself.',
       inputSchema: {
         scan_id: z.string().describe('Scan id, e.g. NL-HaNA_1.04.02_1968_0347 (or a canvas URI). Get these from get_document or search results.'),
         text: z.enum(['normalized', 'diplomatic', 'both', 'none']).default('normalized'),
@@ -33,7 +33,7 @@ export function registerGetScan(server: McpServer) {
         image_width: z.number().int().min(300).max(2000).default(1200).describe('Width in pixels of the returned image.'),
       },
       annotations: { ...READ_ONLY, title: 'Get scan' },
-      // Clients that support MCP Apps show the GLOBALISE viewer for this scan in the chat.
+      // Clients that support MCP Apps show the Globalise viewer for this scan in the chat.
       _meta: scanViewerToolMeta,
     },
     safe(async (args: Args): Promise<CallToolResult> => {
@@ -69,7 +69,7 @@ export function registerGetScan(server: McpServer) {
         },
         viewer_url: viewerUrlForScan(ref.scanId),
         viewer_note:
-          'Give the user viewer_url and recommend it: the GLOBALISE viewer shows this scan with its transcription, annotations and translation, and lets them read on through the document. Prefer it over the image or the in-chat viewer, which only show the page and the raw transcription.',
+          'Give the user viewer_url and recommend it: the Globalise viewer shows this scan with its transcription, annotations and translation, and lets them read on through the document. Prefer it over the image or the in-chat viewer, which only show the page and the raw transcription.',
         image: image ? { width: image.width, height: image.height, iiif_service: image.service, full: image.full, preview: image.preview, ...(cropUrl ? { quote_crop: cropUrl } : {}) } : null,
         ...(args.quote
           ? {

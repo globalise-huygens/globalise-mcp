@@ -23,7 +23,7 @@ export function registerBrowseConcepts(server: McpServer) {
     {
       title: 'Browse the thesaurus hierarchy',
       description:
-        'Shows the GLOBALISE thesaurus as a tree. Without concept: the vocabularies (occupations, statuses, ethnic/religious/caste categories, commodities, document types, place types, ...). With a concept (id or label) or vocabulary id: its labels, definition, broader concepts and narrower concepts, each with how often it is used: persons with it as occupation/status/identity, and documents with it as role tag, profession or document type (narrower concepts included, except role tags). Use the ids in analyze_persons (under, filters), search_documents and analyze_distribution.',
+        'Shows the Globalise thesaurus as a tree. Without concept: the vocabularies (occupations, statuses, ethnic/religious/caste categories, commodities, document types, place types, ...). With a concept (id or label) or vocabulary id: its labels, definition, broader concepts and narrower concepts, each with how often it is used: persons with it as occupation/status/identity, and documents with it as role tag, profession or document type (narrower concepts included, except role tags). Use the ids in analyze_persons (under, filters), search_documents and analyze_distribution.',
       inputSchema: {
         concept: z.string().optional().describe('Concept or vocabulary id, URI or label (e.g. "Militaire beroepen", "soldaat"). Empty: list the vocabularies.'),
         offset: z.number().int().min(0).default(0),

@@ -1,4 +1,4 @@
-# GLOBALISE MCP server, Streamable HTTP mode. Same build approach as globalise-research-portal.
+# Globalise MCP server, Streamable HTTP mode. Same build approach as globalise-research-portal.
 
 # Build
 FROM node:26-alpine AS builder

@@ -49,7 +49,7 @@ export function json(data: unknown): CallToolResult {
 
 export function errorResult(error: unknown): CallToolResult {
   const message = error instanceof UpstreamError
-    ? `GLOBALISE service error: ${error.message}${error.status === 429 || error.status >= 500 ? ' (the service may be busy; try again shortly or narrow the request)' : ''}`
+    ? `Globalise service error: ${error.message}${error.status === 429 || error.status >= 500 ? ' (the service may be busy; try again shortly or narrow the request)' : ''}`
     : error instanceof Error
       ? error.message
       : String(error);

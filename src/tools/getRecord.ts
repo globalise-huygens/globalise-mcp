@@ -24,9 +24,9 @@ export function registerGetRecord(server: McpServer) {
   server.registerTool(
     'get_record',
     {
-      title: 'Get a GLOBALISE record',
+      title: 'Get a Globalise record',
       description:
-        'Fetches the full record behind any GLOBALISE id or URI: person, place, ship, voyage, organisation, polity, thesaurus concept, document or inventory. Returns a summary: names, classifications, dates, statuses, cited sources, every linked record (with its URI, to follow with get_record), and usage counts in the corpus. Large records are outlined; use property (+offset/limit) to page through one property in full.',
+        'Fetches the full record behind any Globalise id or URI: person, place, ship, voyage, organisation, polity, thesaurus concept, document or inventory. Returns a summary: names, classifications, dates, statuses, cited sources, every linked record (with its URI, to follow with get_record), and usage counts in the corpus. Large records are outlined; use property (+offset/limit) to page through one property in full.',
       inputSchema: {
         id: z.string().min(1).describe('Id or URI, e.g. GLOB2_937, Person_100901, gzm_ship0511, ORG_1, Polity_100, a thesaurus uuid, NL-HaNA_1.04.02_1968_0347-0350, inventory:1968, or https://data.globalise.huygens.knaw.nl/hdl:20.500.14722/…'),
         property: z.string().optional().describe('Return this top-level property in full (pruned JSON), e.g. moved_by, is_classificatory_subject_of, referred_to_by, narrower.'),
@@ -37,7 +37,7 @@ export function registerGetRecord(server: McpServer) {
     },
     safe(async (args: Args) => {
       const parsed = parseId(args.id);
-      if (!parsed) throw new Error(`Unrecognised GLOBALISE id: ${args.id}`);
+      if (!parsed) throw new Error(`Unrecognised Globalise id: ${args.id}`);
 
       if (parsed.kind === 'scan') {
         return json({ note: `${parsed.id} is a scan (page image). Use get_scan for its transcription, annotations and image.`, uri: parsed.uri });

@@ -29,7 +29,7 @@ interface FetchJsonOptions {
 }
 
 /**
- * Fetches JSON from a GLOBALISE service. Always asks for JSON-LD: the persistent identifiers
+ * Fetches JSON from a Globalise service. Always asks for JSON-LD: the persistent identifiers
  * content-negotiate, and without this header thesaurus URIs redirect to an HTML page.
  */
 export async function fetchJson<T>(url: string, options: FetchJsonOptions = {}): Promise<T> {

@@ -1,4 +1,4 @@
-// How GLOBALISE identifiers, persistent URIs, scans, manifests and portal links relate.
+// How Globalise identifiers, persistent URIs, scans, manifests and portal links relate.
 //
 //   document  NL-HaNA_1.04.02_1968_0347-0350   a logical document spanning scans 0347..0350
 //   scan      NL-HaNA_1.04.02_1968_0347        one page image (IIIF canvas) in inventory 1968
@@ -124,7 +124,7 @@ export function documentInventory(documentId: string): string | null {
 }
 
 /**
- * Opens a scan in the GLOBALISE viewer (transcription next to the facsimile). The path names the
+ * Opens a scan in the Globalise viewer (transcription next to the facsimile). The path names the
  * inventory and the scan's page number (NL-HaNA_1.04.02_1053_0002 → inventory:1053/0002); the
  * manifest parameter tells the viewer which inventory to load and canvas names the scan in full.
  * Same pattern as viewerUrl() in globalise-search (unified/api.js).

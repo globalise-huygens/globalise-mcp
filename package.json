@@ -1,7 +1,7 @@
 {
   "name": "@globalise/mcp",
   "version": "0.1.0",
-  "description": "MCP server for the GLOBALISE VOC archives: transcriptions, annotations and reference data",
+  "description": "MCP server for the Globalise VOC archives: transcriptions, annotations and reference data",
   "private": true,
   "license": "UNLICENSED",
   "type": "module",

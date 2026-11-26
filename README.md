@@ -1,9 +1,9 @@
-# GLOBALISE MCP server
+# Globalise MCP server
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server that lets LLM tools (Claude,
 ChatGPT, Cursor, VS Code Copilot, …) do source-critical research in the
-[GLOBALISE](https://globalise.nl) VOC archives: the machine transcriptions, their entity and event
-annotations, and the GLOBALISE reference data (persons, places, ships, organisations, polities,
+[Globalise](https://globalise.nl) VOC archives: the machine transcriptions, their entity and event
+annotations, and the Globalise reference data (persons, places, ships, organisations, polities,
 thesaurus).
 
 Status: **prototype**. It runs against the work-in-progress indices at `search.globalise.nl` and the
@@ -79,7 +79,7 @@ src/
   server.ts            tool/resource/prompt registration (createServer)
   stdio.ts, http.ts    entry points; fetchHandler.ts = Web-standard Request→Response handler
   knowledge.ts         data model, limitations, query syntax, workflow (served to the model);
-                       summarises and links to the GLOBALISE website, which is the source of truth
+                       summarises and links to the Globalise website, which is the source of truth
   tools/               one file per tool
   globalise/           domain logic: ids & links, ES client, query language (port of
                        globalise-search/unified), annotated-text parsing, Linked Art summaries,
@@ -130,7 +130,7 @@ Configuration (environment variables): `GLOBALISE_SEARCH_BASE`, `GLOBALISE_DATA_
 ## Roadmap
 
 - Use resolved dates, English translations and new reference-data fields as they land in the indices.
-- Embed the GLOBALISE viewer in the chat via [MCP Apps](https://modelcontextprotocol.io) (`ui://`
+- Embed the Globalise viewer in the chat via [MCP Apps](https://modelcontextprotocol.io) (`ui://`
   resources), for clients that support it.
 - Link named persons, ships and organisations by id once the annotations carry those ids.
 - Publish to npm and host at a stable URL.

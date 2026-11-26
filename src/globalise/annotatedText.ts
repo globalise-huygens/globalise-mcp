@@ -87,7 +87,7 @@ export function renderFragment(fragment: string, format: TextFormat = 'inline'):
 
 export const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
-// --- Highlighting in the GLOBALISE viewer -------------------------------------------------------
+// --- Highlighting in the Globalise viewer -------------------------------------------------------
 // Ported from globalise-search (unified/proposal2/scans.js: hitQuery, snippetText).
 
 /** Drops annotation markup cut off at a fragment's edges ("…atavia](type%3APlace) van", "[Batavia](_hit_ter"). */

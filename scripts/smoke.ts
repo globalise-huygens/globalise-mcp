@@ -1,4 +1,4 @@
-// End-to-end check against the live GLOBALISE services: connects an MCP client to the server
+// End-to-end check against the live Globalise services: connects an MCP client to the server
 // in-process and calls every tool once. Run with: npm run smoke
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';

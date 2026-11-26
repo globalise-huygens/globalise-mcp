@@ -1,7 +1,7 @@
 // Corpus-wide statistics, computed live from the search indices (nothing is hard-coded), so the
 // figures follow every re-index.
 //
-// MAINTENANCE: the GLOBALISE search indices are still being developed. When fields are added,
+// MAINTENANCE: the Globalise search indices are still being developed. When fields are added,
 // renamed or removed, update the definitions below (DOCUMENT_COUNTS, REFERENCE_INDICES,
 // PERSON_COUNTS, MENTION_ESTIMATES) and the NOT_AVAILABLE list, which tells the model what cannot
 // be computed yet. Remove an entry from NOT_AVAILABLE once a figure becomes computable.
@@ -69,9 +69,9 @@ export function registerCorpusStatistics(server: McpServer) {
   server.registerTool(
     'corpus_statistics',
     {
-      title: 'Statistics of the GLOBALISE data',
+      title: 'Statistics of the Globalise data',
       description:
-        'Live overview figures of the whole dataset: documents, scans, inventories and date range; how many documents have a place of writing, document type, place tags, linked places and role concepts; the number of records per kind of reference data (persons, places, ships, organisations, polities, concepts per vocabulary); person records with occupation/status/identity. Optionally documents per annotation type, and sample-based estimates of the number of tagged and linked mentions. Also lists what cannot be computed yet. Use for "how much is in GLOBALISE" questions and to put other counts in proportion.',
+        'Live overview figures of the whole dataset: documents, scans, inventories and date range; how many documents have a place of writing, document type, place tags, linked places and role concepts; the number of records per kind of reference data (persons, places, ships, organisations, polities, concepts per vocabulary); person records with occupation/status/identity. Optionally documents per annotation type, and sample-based estimates of the number of tagged and linked mentions. Also lists what cannot be computed yet. Use for "how much is in Globalise" questions and to put other counts in proportion.',
       inputSchema: {
         annotation_types: z.boolean().default(false).describe('Also count documents per annotation type (Place, Person, Payment, Attack, ...).'),
         estimate_mentions: z.boolean().default(false).describe('Also estimate the number of tagged and linked mentions (not documents) from a random sample; slower.'),

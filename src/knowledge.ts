@@ -1,7 +1,7 @@
 // Background knowledge the model needs to use the tools well and to report honestly.
 // Served as MCP resources and through the globalise_about tool (not every client shows resources).
 //
-// The GLOBALISE website is the source of truth for what the data is, how it was made and what its
+// The Globalise website is the source of truth for what the data is, how it was made and what its
 // limitations are. This file summarises it for the model and links to the pages, so the model can
 // point users to them. When the website changes, update this file to match; do not let the two
 // drift apart. Statements about the current state of the search indices (fields, coverage, known
@@ -9,7 +9,7 @@
 
 import { config } from './config.ts';
 
-// Pages of the GLOBALISE website, relative to config.websiteBase.
+// Pages of the Globalise website, relative to config.websiteBase.
 // TODO: the website is not live yet; these are the source files on GitHub. When it goes live, set
 // GLOBALISE_WEBSITE_BASE (or the default in config.ts) and replace these paths with the live URLs.
 const PAGES = {
@@ -30,9 +30,9 @@ const PAGES = {
 const page = (key: keyof typeof PAGES, anchor?: string): string =>
   `${config.websiteBase}/${PAGES[key]}${anchor ? `#${anchor}` : ''}`;
 
-export const OVERVIEW = `# GLOBALISE: what this server gives access to
+export const OVERVIEW = `# Globalise: what this server gives access to
 
-GLOBALISE (https://globalise.nl, Huygens Institute) makes part of the archives of the Dutch East
+Globalise (https://globalise.nl, Huygens Institute) makes part of the archives of the Dutch East
 India Company (VOC) searchable: the "Overgekomen Brieven en Papieren" (OBP; in English the Copied
 Letters series) in archive 1.04.02 of the Nationaal Archief in The Hague. That is about 6,900
 inventory numbers and 4.8 million pages, mostly from roughly 1605 to 1794. The pages are available
@@ -56,16 +56,16 @@ The search indices behind this server are work in progress; fields are being add
   often each concept is used for persons and documents.
 - analyze_persons: count person records by occupation, status or identity, with filters, drill-down
   and cross-tabulation (e.g. statuses of persons with a military occupation).
-- get_record: the full reference record (or document metadata) for any GLOBALISE id/URI.
+- get_record: the full reference record (or document metadata) for any Globalise id/URI.
 - get_document: a document's metadata, text (paged), tagged entities and scan list.
 - get_scan: one page: transcription, annotations, IIIF image (optionally the image itself, or a
   crop around a quoted passage) and a viewer link. Use this to verify claims against the original.
 - globalise_about: this documentation (topics: overview, data_model, limitations, query_syntax, workflow).
 
 ## Documentation for the user
-The GLOBALISE website explains the data in full. Point the user to these pages when a limitation
+The Globalise website explains the data in full. Point the user to these pages when a limitation
 matters for their question, and whenever they want to know more:
-- Using GLOBALISE with an AI assistant (how to check your answers): ${page('aiAssistant')}
+- Using Globalise with an AI assistant (how to check your answers): ${page('aiAssistant')}
 - Bias & limitations: ${page('biasAndLimitations')}
 - What's in the data: ${page('overview')}
 - How the data was produced: ${page('production')}
@@ -76,7 +76,7 @@ matters for their question, and whenever they want to know more:
 - Citation guide: ${page('citation')}
 `;
 
-export const DATA_MODEL = `# Data model: how GLOBALISE objects relate
+export const DATA_MODEL = `# Data model: how Globalise objects relate
 
 ARCHIVE (NL-HaNA 1.04.02, VOC)
  └─ INVENTORY (e.g. 1968) = usually one bound volume = one IIIF Manifest
@@ -131,9 +131,9 @@ More:
 
 export const LIMITATIONS = `# Source criticism, bias and limitations
 
-This summarises the GLOBALISE website page "Bias & limitations" (${page('biasAndLimitations')}),
+This summarises the Globalise website page "Bias & limitations" (${page('biasAndLimitations')}),
 which is the authoritative version. Tell the user about the limitations that affect their question,
-in your answer, not only when asked, and link them to that page and to "Using GLOBALISE with an AI
+in your answer, not only when asked, and link them to that page and to "Using Globalise with an AI
 assistant" (${page('aiAssistant', 'checking-the-answers')}).
 
 ## The archive itself
@@ -173,7 +173,7 @@ assistant" (${page('aiAssistant', 'checking-the-answers')}).
 - Always verify quotations and numbers on the scan (get_scan with include_image / quote).
 
 ## Documents
-- The volumes were not originally divided into documents in a machine-readable way. GLOBALISE
+- The volumes were not originally divided into documents in a machine-readable way. Globalise
   reconstructed document boundaries with a segmentation model, guided by historical indexes where
   these exist. Boundaries can be wrong: a document may start or end on the wrong scan, or two
   documents may be merged or one split. The model is much less reliable in volumes without an index,
@@ -289,7 +289,7 @@ repeat your route through the archives:
 
 const OWN_KNOWLEDGE = `## Your own knowledge: restricted, and always flagged
 
-Answer from what the GLOBALISE tools return. Do not fill gaps with your own knowledge of VOC
+Answer from what the Globalise tools return. Do not fill gaps with your own knowledge of VOC
 history, people, places, dates or numbers. Use it only where it is needed to search well (period
 spellings, variants, which terms to try) or to put sources in context, and keep that minimal.
 Whenever an answer contains anything that does not come from the tools (background, an
@@ -335,13 +335,13 @@ export const TOPICS = {
 
 export type Topic = keyof typeof TOPICS;
 
-export const SERVER_INSTRUCTIONS = `This server gives access to GLOBALISE: about 4.8 million pages of the VOC (Dutch East India
+export const SERVER_INSTRUCTIONS = `This server gives access to Globalise: about 4.8 million pages of the VOC (Dutch East India
 Company) archives, mostly 1605–1794, as uncorrected machine transcriptions with automatic annotations,
 reconstructed documents and curated reference data. The texts are early-modern Dutch with heavy
 spelling variation and HTR errors. Before substantive research, read globalise_about (topics
 data_model and limitations). Resolve entities to ids before searching, use analyze_distribution to
 judge coverage, verify quotes and numbers with get_scan, and always cite document/scan ids, viewer
-links and the index version. When you show or cite a scan, point the user to its GLOBALISE viewer link
+links and the index version. When you show or cite a scan, point the user to its Globalise viewer link
 (viewer_url), which shows the scan with its transcription, annotations and translation; prefer it
 over a bare image or the in-chat scan viewer. In every substantive answer, include a "Research strategy"
 section: the route you took through the archives (which tools, in what order, why) and the exact search

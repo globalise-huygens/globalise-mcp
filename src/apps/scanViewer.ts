@@ -41,7 +41,7 @@ export function registerScanViewer(server: McpServer) {
   server.registerResource(
     'globalise-scan-viewer',
     SCAN_VIEWER_URI,
-    { title: 'GLOBALISE scan viewer', mimeType: MCP_APP_MIME, _meta: RESOURCE_META },
+    { title: 'Globalise scan viewer', mimeType: MCP_APP_MIME, _meta: RESOURCE_META },
     async (uri) => {
       cachedHtml ??= viewerHtml(openSeadragonSource());
       return { contents: [{ uri: uri.href, mimeType: MCP_APP_MIME, text: cachedHtml, _meta: RESOURCE_META }] };
@@ -55,7 +55,7 @@ export function viewerHtml(openSeadragon: string): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GLOBALISE scan viewer</title>
+<title>Globalise scan viewer</title>
 <style>
   :root { color-scheme: light dark; --fg: #1d1d1b; --muted: #6b6b66; --bg: #ffffff; --panel: #f7f6f2; --line: #e2e0da; --accent: #8a3b12; --mark: rgba(214, 120, 40, 0.28); --view-h: 520px; }
   @media (prefers-color-scheme: dark) { :root { --fg: #ecebe6; --muted: #a3a29b; --bg: #1c1c1a; --panel: #242421; --line: #3a3935; --accent: #e8925f; --mark: rgba(232, 146, 95, 0.35); } }
@@ -93,7 +93,7 @@ export function viewerHtml(openSeadragon: string): string {
 </head>
 <body>
 <header>
-  <span class="title" id="title">GLOBALISE scan viewer</span>
+  <span class="title" id="title">Globalise scan viewer</span>
   <span class="meta" id="scan"></span>
   <span class="controls">
     <button id="prev" title="Previous scan" disabled>‹</button>
@@ -103,7 +103,7 @@ export function viewerHtml(openSeadragon: string): string {
   <span class="controls">
     <button id="passage" hidden>Go to passage</button>
     <button id="expand" hidden title="Show larger">Expand</button>
-    <button id="open" class="primary" hidden title="Read this page with its transcription, annotations and translation in the GLOBALISE viewer">Open in GLOBALISE viewer ↗</button>
+    <button id="open" class="primary" hidden title="Read this page with its transcription, annotations and translation in the Globalise viewer">Open in Globalise viewer ↗</button>
   </span>
 </header>
 <div id="statusbar"><span id="status">Starting…</span><button id="details" title="Show diagnostics">details</button></div>
@@ -262,7 +262,7 @@ document.addEventListener('securitypolicyviolation', function (e) { window.__dia
 
     renderText(data.text_normalized || data.text_diplomatic || '(No transcription returned for this page.)', quote && quote.transcribed_as);
     openImage(data.image.iiif_service + '/info.json');
-    status('Scan ' + data.scan_id + ' · image: Nationaal Archief (IIIF) · text: GLOBALISE HTR');
+    status('Scan ' + data.scan_id + ' · image: Nationaal Archief (IIIF) · text: Globalise HTR');
     reportSize();
   }
 
@@ -334,7 +334,7 @@ document.addEventListener('securitypolicyviolation', function (e) { window.__dia
       if (result && result.isError) throw { message: (result.content && result.content[0] && result.content[0].text) || 'error' };
       render(result);
     } catch (error) {
-      status('Could not load ' + scanId + ': ' + (error && error.message || 'this client does not let the viewer call tools') + '. Use "Open in GLOBALISE viewer" instead.', true);
+      status('Could not load ' + scanId + ': ' + (error && error.message || 'this client does not let the viewer call tools') + '. Use "Open in Globalise viewer" instead.', true);
     }
   }
 

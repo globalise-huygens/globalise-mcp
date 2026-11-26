@@ -1,4 +1,4 @@
-// Compact, bounded summaries of GLOBALISE JSON-LD records (Linked Art / CIDOC-CRM for entities
+// Compact, bounded summaries of Globalise JSON-LD records (Linked Art / CIDOC-CRM for entities
 // and documents, SKOS for thesaurus concepts). Some records are several MB (a ship with all its
 // voyages), so the summary is an outline with counts, and single properties can be paged.
 
@@ -87,7 +87,7 @@ export interface LinkedEntity {
   via: string;
 }
 
-/** Every distinct GLOBALISE entity referenced anywhere in the record, with the property path. */
+/** Every distinct Globalise entity referenced anywhere in the record, with the property path. */
 export function linkedEntities(record: Obj, limit = 80): { items: LinkedEntity[]; total: number } {
   const seen = new Map<string, LinkedEntity>();
   const visit = (node: Json, path: string[], depth: number) => {

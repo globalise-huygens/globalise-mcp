@@ -1,4 +1,4 @@
-// The query language of the GLOBALISE "search everything" prototype (globalise-search/unified),
+// The query language of the Globalise "search everything" prototype (globalise-search/unified),
 // ported to TypeScript for the documents index. Pure functions: no network.
 //
 //   words, "exact phrases", wildcards (timmer*), fuzzy (timmerman~1)

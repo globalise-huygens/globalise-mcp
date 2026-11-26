@@ -39,7 +39,7 @@ export function registerAnalyzePersons(server: McpServer) {
     {
       title: 'Analyse person records by occupation, status or identity',
       description:
-        'Counts the GLOBALISE person records by thesaurus classification: occupation, status or identity. Filter by classifications and/or name, group by the concepts directly below a concept (under; default: the top level), and optionally cross-tabulate with a second dimension. Drill down by passing a bucket id as under. Use browse_concepts to see the hierarchy. Returns counts, shares, how many persons fall outside the listed groups, and sample persons to check.',
+        'Counts the Globalise person records by thesaurus classification: occupation, status or identity. Filter by classifications and/or name, group by the concepts directly below a concept (under; default: the top level), and optionally cross-tabulate with a second dimension. Drill down by passing a bucket id as under. Use browse_concepts to see the hierarchy. Returns counts, shares, how many persons fall outside the listed groups, and sample persons to check.',
       inputSchema: {
         group_by: z.enum(DIMENSIONS).default('occupation').describe('Classification to count by.'),
         under: z.string().optional().describe('Concept id or label: group by its narrower concepts (e.g. "Militaire beroepen"). Default: the top level of the group_by hierarchy.'),

@@ -86,7 +86,7 @@ export function registerSearchReferenceData(server: McpServer) {
     {
       title: 'Find persons, places, ships, organisations, polities, concepts',
       description:
-        'Searches the GLOBALISE reference data by name (any recorded spelling): persons, places, ships, organisations (e.g. VOC), polities (e.g. Mataram) and thesaurus concepts (professions, ranks, statuses, identities, document types, commodities). Returns ids to use in search_documents (entities, or place:/role:/concept: fields) and get_record, with the number of documents that mention each (when count_mentions is on).',
+        'Searches the Globalise reference data by name (any recorded spelling): persons, places, ships, organisations (e.g. VOC), polities (e.g. Mataram) and thesaurus concepts (professions, ranks, statuses, identities, document types, commodities). Returns ids to use in search_documents (entities, or place:/role:/concept: fields) and get_record, with the number of documents that mention each (when count_mentions is on).',
       inputSchema: {
         query: z.string().min(1).max(200).describe('Name or term, any spelling; wildcards allowed (e.g. "Coroman*", "koopman", "Pieter Both").'),
         kinds: z.array(z.enum(Object.keys(KINDS) as [KindKey, ...KindKey[]])).optional().describe('Which kinds of record to search (default: all).'),
