@@ -12,7 +12,7 @@ import { config, INDICES, type IndexKey } from '../config.ts';
 import { conceptSchemes } from '../globalise/concepts.ts';
 import { countBody, countOf, esMsearch, esSearch, type EsQuery } from '../globalise/es.ts';
 import { countEstimate } from '../globalise/mentions.ts';
-import { placeGraph } from '../globalise/places.ts';
+import { placeGraph, withPrefLabels } from '../globalise/places.ts';
 import { ANNOTATION_TYPES } from '../globalise/query.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 
@@ -195,6 +195,7 @@ async function placeFigures() {
   const nodes = [...graph.nodes.values()];
   const indexed = nodes.filter((n) => n.indexed);
   const linked = indexed.filter((n) => n.documents > 0);
+  await withPrefLabels(graph, [...linked].sort((a, b) => b.documents - a.documents).slice(0, 10).map((n) => n.id));
   return {
     records: indexed.length,
     with_coordinates: indexed.filter((n) => n.point).length,

@@ -17,6 +17,7 @@
 import { config } from '../config.ts';
 import { LruCache } from '../util/cache.ts';
 import { fetchJson } from '../util/http.ts';
+import { Semaphore } from '../util/semaphore.ts';
 import { esSearch, splitTitles } from './es.ts';
 import { parseId, uriFor } from './ids.ts';
 
@@ -27,9 +28,15 @@ export interface GeoPoint {
 
 export interface PlaceNode {
   id: string;
-  /** All recorded spellings; the first is the display label. */
+  /** All recorded spellings (the index sorts them alphabetically: the first is not the preferred one). */
   names: string[];
+  /**
+   * Display label: the preferred label (_label of the linked-data record) once loaded with
+   * withPrefLabels, until then the first recorded spelling. See prefLabelLoaded.
+   */
   label: string;
+  /** Whether label is the record's preferred label. */
+  prefLabelLoaded: boolean;
   point: GeoPoint | null;
   /** Thesaurus concept ids (city, island, kingdom, ...). */
   classifications: string[];
@@ -74,7 +81,7 @@ export function buildPlaceGraph(
     let n = nodes.get(id);
     if (!n) {
       const label = options.labels?.get(id) ?? id;
-      n = { id, names: [label], label, point: null, classifications: [], parents: [], children: [], overlaps: [], indexed: false, documents: 0 };
+      n = { id, names: [label], label, prefLabelLoaded: options.labels?.has(id) ?? false, point: null, classifications: [], parents: [], children: [], overlaps: [], indexed: false, documents: 0 };
       nodes.set(id, n);
     }
     return n;
@@ -86,6 +93,7 @@ export function buildPlaceGraph(
     n.indexed = true;
     n.names = names.length ? names : [id];
     n.label = n.names[0];
+    n.prefLabelLoaded = false;
     const point = source.geoPoint;
     n.point = point && Number.isFinite(point.lat) && Number.isFinite(point.lon) ? { lat: point.lat, lon: point.lon } : null;
     n.classifications = (source.placeClassification ?? []).map(conceptIdOf);
@@ -157,7 +165,10 @@ async function loadPlaceGraph(): Promise<PlaceGraph> {
   );
 
   const documents = await documentCounts(records.map((r) => r.id));
-  return buildPlaceGraph(records, { labels, documents, indexVersion });
+  const graph = buildPlaceGraph(records, { labels, documents, indexVersion });
+  // Preferred labels fetched before a reload are still valid.
+  for (const node of graph.nodes.values()) applyPrefLabel(node, prefLabels.get(node.id));
+  return graph;
 }
 
 /** Documents linking each id, in batches of one filters aggregation each. */
@@ -192,6 +203,67 @@ export function anyPlaceSpan(ids: string[]): Record<string, unknown> | null {
 
 /** Largest region that may be used inside a proximity group (one span clause per place). */
 export const MAX_SPAN_PLACES = 1000;
+
+// --- Preferred labels (interim) -----------------------------------------------------------
+//
+// INTERIM: place-objects has no preferred-label field; its `title` holds every spelling in
+// alphabetical order (GLOB_806: Calamba, Colombe, Colombo, …). The preferred label is the
+// _label of the linked-data record, fetched here on demand for the places a tool is about to
+// show, and cached. Remove this once the index carries the preferred label.
+
+const prefLabels = new LruCache<string>(20_000, 24 * 60 * 60_000);
+/** At most this many label requests at once, so label loading never takes all upstream slots. */
+const labelSlots = new Semaphore(4);
+const inFlight = new Map<string, Promise<void>>();
+
+function applyPrefLabel(node: PlaceNode, label: string | undefined) {
+  if (!label) return;
+  node.label = label;
+  node.prefLabelLoaded = true;
+  if (!node.names.includes(label)) node.names = [label, ...node.names];
+}
+
+function loadPrefLabel(graph: PlaceGraph, id: string): Promise<void> {
+  let promise = inFlight.get(id);
+  if (!promise) {
+    promise = labelSlots
+      .run(() => fetchJson<{ _label?: unknown }>(uriFor('place', id), { noCache: true }))
+      .then((record) => {
+        if (typeof record._label === 'string' && record._label.trim()) {
+          prefLabels.set(id, record._label.trim());
+          applyPrefLabel(graph.nodes.get(id)!, record._label.trim());
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => inFlight.delete(id));
+    inFlight.set(id, promise);
+  }
+  return promise;
+}
+
+/**
+ * Makes sure the given places show their preferred label. Waits at most budgetMs; places still
+ * loading then keep their first spelling for this answer (and get the label for the next one).
+ * Returns the number of places that are still without a preferred label.
+ */
+export async function withPrefLabels(graph: PlaceGraph, ids: Iterable<string | null | undefined>, budgetMs = 10_000): Promise<number> {
+  const nodes = [...new Set(ids)].map((id) => (id ? graph.nodes.get(id) : undefined)).filter((n): n is PlaceNode => !!n && !n.prefLabelLoaded);
+  for (const node of nodes) applyPrefLabel(node, prefLabels.get(node.id));
+  const missing = nodes.filter((n) => !n.prefLabelLoaded && n.indexed);
+  if (missing.length) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([
+      Promise.all(missing.map((n) => loadPrefLabel(graph, n.id))),
+      new Promise((resolve) => (timer = setTimeout(resolve, budgetMs))),
+    ]);
+    clearTimeout(timer);
+  }
+  return missing.filter((n) => !n.prefLabelLoaded).length;
+}
+
+/** Note for tool output when some labels are not preferred labels yet. */
+export const labelsNote = (missing: number): Record<string, string> =>
+  missing ? { labels_note: `${missing} place(s) are shown with their alphabetically first recorded spelling, because their preferred label could not be loaded in time; ask again to get it.` } : {};
 
 // --- Geometry -----------------------------------------------------------------------------
 
@@ -431,7 +503,25 @@ export function regionOf(graph: PlaceGraph, spec: RegionSpec): ResolvedRegion {
 
 export async function resolveRegion(spec: RegionSpec): Promise<ResolvedRegion & { graph: PlaceGraph }> {
   const graph = await placeGraph();
-  return { ...regionOf(graph, spec), graph };
+  return { ...(await regionWithLabels(graph, spec)), graph };
+}
+
+/** regionOf, with preferred labels for the places its descriptions name (the centre, the most mentioned, overlaps). */
+export async function regionWithLabels(graph: PlaceGraph, spec: RegionSpec, alsoLabel = 0): Promise<ResolvedRegion> {
+  const first = regionOf(graph, spec);
+  const named = new Set<string>();
+  for (const value of [spec.within, spec.near]) {
+    if (!value || parsePoint(value)) continue;
+    try {
+      named.add(resolvePlace(graph, value).node.id);
+    } catch {
+      // regionOf has already reported it
+    }
+  }
+  for (const n of first.linked.slice(0, Math.max(15, alsoLabel))) named.add(n.id);
+  for (const node of first.members) if (node.overlaps.length || node.children.length) named.add(node.id);
+  await withPrefLabels(graph, [...named].slice(0, 300));
+  return regionOf(graph, spec);
 }
 
 /** Compact description of a place for tool output. */

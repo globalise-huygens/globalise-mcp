@@ -6,7 +6,7 @@ import { objectCardUrl, uriFor, type EntityKind } from '../globalise/ids.ts';
 import { labelsFor } from '../globalise/lookup.ts';
 import { conceptLabels } from '../globalise/concepts.ts';
 import { placeDataExplanation } from './placeExplanation.ts';
-import { normaliseName, placeGraph, placesMatching, type PlaceGraph } from '../globalise/places.ts';
+import { normaliseName, placeGraph, placesMatching, withPrefLabels, type PlaceGraph } from '../globalise/places.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 
 const KINDS = {
@@ -135,7 +135,7 @@ export function registerSearchReferenceData(server: McpServer) {
             for (const id of missing.slice(0, limit)) {
               items.push({
                 id,
-                names: [labels.get(id) ?? id],
+                names: [labels.get(id) ?? id], // replaced by all spellings in addPlaceContext
                 uri: uriFor('place', id),
                 object_card_url: objectCardUrl(uriFor('place', id)),
                 note: `the corpus tags the spelling "${attested.get(id)?.surface}" with this place`,
@@ -220,10 +220,14 @@ async function addMentionCounts(key: KindKey, items: Array<Record<string, any>>)
 /** Coordinates, types and "part of" for place results, from the place graph. */
 async function addPlaceContext(graph: PlaceGraph, items: Array<Record<string, any>>) {
   const nodes = items.map((item) => graph.nodes.get(item.id));
+  await withPrefLabels(graph, nodes.flatMap((n) => (n ? [n.id, ...n.parents, ...n.overlaps] : [])));
   const types = await conceptLabels(nodes.flatMap((n) => n?.classifications ?? []));
   items.forEach((item, i) => {
     const node = nodes[i];
     if (!node) return;
+    // Preferred label first, then the other recorded spellings (the index lists them alphabetically).
+    item.label = node.label;
+    item.names = [node.label, ...node.names.filter((n) => n !== node.label)];
     if (node.point) item.coordinates = { lat: node.point.lat, lon: node.point.lon };
     if (node.classifications.length) item.types = node.classifications.map((c) => types.get(c) ?? c);
     if (node.parents.length) item.part_of = node.parents.map((p) => `${graph.nodes.get(p)?.label ?? p} (${p})`);

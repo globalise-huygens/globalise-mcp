@@ -3,7 +3,7 @@
 // told (server instructions, workflow) to pass this on to the user.
 
 import { config } from '../config.ts';
-import { placeGraph, regionOf, type PlaceGraph, type PlaceNode, type RegionSpec } from '../globalise/places.ts';
+import { placeGraph, regionWithLabels, withPrefLabels, type PlaceGraph, type PlaceNode, type RegionSpec } from '../globalise/places.ts';
 import type { Chip } from '../globalise/query.ts';
 
 const BIAS_PAGE = `${config.websiteBase}/research-responsibly/ethics/bias-and-limitations.md`;
@@ -44,6 +44,10 @@ export async function explainPlaces(input: PlaceExplanationInput): Promise<Recor
   const used: Record<string, unknown>[] = [];
   const notUsed = new Set<string>();
   const limitations = new Set<string>([PLACE_LIMITATIONS.linking, PLACE_LIMITATIONS.meaning, PLACE_LIMITATIONS.coverage]);
+  if (graph) {
+    const ids = placeChips.flatMap((c) => (c.id ? [c.id] : []));
+    await withPrefLabels(graph, ids.flatMap((id) => [id, ...(graph.nodes.get(id)?.overlaps ?? [])]));
+  }
 
   for (const chip of placeChips) {
     const node = chip.id ? graph?.nodes.get(chip.id) : undefined;
@@ -64,9 +68,9 @@ export async function explainPlaces(input: PlaceExplanationInput): Promise<Recor
     }
   }
 
-  const describeRegion = (spec: RegionSpec, criterion: string, scope: Scope) => {
+  const describeRegion = async (spec: RegionSpec, criterion: string, scope: Scope) => {
     if (!graph) return;
-    const region = regionOf(graph, spec);
+    const region = await regionWithLabels(graph, spec);
     const geographic = !!(spec.bbox || spec.near);
     const unlinked = region.members.length - region.linked.length;
     const entry: Record<string, unknown> = {
@@ -105,8 +109,8 @@ export async function explainPlaces(input: PlaceExplanationInput): Promise<Recor
     if (scope !== 'mentions') limitations.add(PLACE_LIMITATIONS.writing);
   };
 
-  for (const chip of withinChips) describeRegion({ within: chip.value }, `within:${chip.value}`, 'mentions');
-  if (hasRegion) describeRegion(input.region!, `region=${JSON.stringify(input.region)}`, input.scope ?? 'mentions');
+  for (const chip of withinChips) await describeRegion({ within: chip.value }, `within:${chip.value}`, 'mentions');
+  if (hasRegion) await describeRegion(input.region!, `region=${JSON.stringify(input.region)}`, input.scope ?? 'mentions');
 
   for (const chip of settlementChips) {
     used.push({ criterion: `settlement:${chip.value}`, matches: 'the place-of-writing field, exact spelling (case-insensitive; wildcards allowed); not linked to place records' });

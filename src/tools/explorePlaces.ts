@@ -14,7 +14,9 @@ import {
   placeBrief,
   parsePoint,
   placeGraph,
-  regionOf,
+  labelsNote,
+  regionWithLabels,
+  withPrefLabels,
   resolvePlace,
   type PlaceGraph,
   type PlaceNode,
@@ -72,6 +74,7 @@ export function registerExplorePlaces(server: McpServer) {
       const keep = (n: PlaceNode) => args.include_unlinked || n.documents > 0;
       const out: Record<string, unknown> = {};
       const caveats: string[] = [CAVEATS.referenceData, CAVEATS.regions];
+      let unlabelled = 0;
 
       if (args.place) {
         const resolved = resolvePlace(graph, args.place);
@@ -86,12 +89,14 @@ export function registerExplorePlaces(server: McpServer) {
           ...node.overlaps,
           ...chains.flatMap((c) => c.chain.map((n) => n.id)),
         ].map((id) => graph.nodes.get(id)!).filter(Boolean);
+        unlabelled += await withPrefLabels(graph, [node, ...related, ...resolved.alternatives, ...nearby.slice(0, limit).map((p) => p.node)].map((n) => n.id));
         const labels = await classificationLabels([node, ...related, ...nearby.map((p) => p.node), ...containedNodes.slice(0, limit)]);
 
         const [anyInside] = await esMsearch([{ index: 'documents', body: countBody(anyPlaceClause(containedNodes.concat(node).filter((n) => n.documents > 0).map((n) => n.id))) }]);
         out.place = {
           ...describe(node, labels),
           names: node.names,
+          label_note: node.prefLabelLoaded ? 'label = the preferred label of the place record; names = all recorded spellings' : 'label = first recorded spelling (preferred label not loaded)',
           resolved_by: resolved.method,
           ...(resolved.alternatives.length ? { other_places_with_this_name: resolved.alternatives.map((n) => describe(n, labels)) } : {}),
           has_own_record: node.indexed,
@@ -133,9 +138,10 @@ export function registerExplorePlaces(server: McpServer) {
       }
 
       if (hasRegion(args.region)) {
-        const region = regionOf(graph, args.region);
+        const region = await regionWithLabels(graph, args.region, limit);
         const center = args.region.near ? (parsePoint(args.region.near) ?? resolvePlace(graph, args.region.near).node.point) : null;
         const listed = sortPlaces(region.members.filter(keep), args.sort, center);
+        unlabelled += await withPrefLabels(graph, listed.slice(0, limit).flatMap((n) => [n.id, ...n.parents]));
         const labels = await classificationLabels(listed.slice(0, limit));
         const [any] = await esMsearch([{ index: 'documents', body: countBody(anyPlaceClause(region.linked.map((n) => n.id))) }]);
         out.region = {
@@ -153,6 +159,7 @@ export function registerExplorePlaces(server: McpServer) {
 
       return json({
         ...out,
+        ...labelsNote(unlabelled),
         place_data_explanation: placeDataExplanation(!!(args.region?.bbox || args.region?.near || (args.nearby_km ?? 25) > 0)),
         how_to_read:
           'documents = documents in the whole corpus whose text links a mention to this place id. Places with 0 documents (for example the GAVOC atlas places and modern administrative regions) are never linked in the text; a region finds documents only through the linked places inside it.',

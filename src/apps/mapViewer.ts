@@ -407,7 +407,9 @@ window.addEventListener('unhandledrejection', function (e) { window.__diag('unha
     const rect = $('mapwrap').getBoundingClientRect();
     const p = hit.p;
     $('tip').innerHTML = '';
-    $('tip').append(el('b', p.label), el('div', p.documents + ' matching documents'), el('div', p.per_1000_corpus_documents + ' per 1000 of its ' + p.corpus_documents + ' documents'));
+    $('tip').append(el('b', p.label));
+    if (p.also_recorded_as && p.also_recorded_as.length) $('tip').append(el('div', 'also: ' + p.also_recorded_as.join(', ')));
+    $('tip').append(el('div', p.documents + ' matching documents'), el('div', p.per_1000_corpus_documents + ' per 1000 of its ' + p.corpus_documents + ' documents'));
     $('tip').style.display = 'block';
     $('tip').style.left = Math.min(rect.width - 200, e.clientX - rect.left + 12) + 'px';
     $('tip').style.top = (e.clientY - rect.top + 12) + 'px';
@@ -453,7 +455,9 @@ window.addEventListener('unhandledrejection', function (e) { window.__diag('unha
     body.textContent = '';
     $('side').querySelector('h2').textContent = 'Place';
     const back = el('button', '← All places', 'link'); back.onclick = () => { selected = null; draw(); renderList(); };
-    body.append(back, el('h3', p.label), el('div', p.id + (p.part_of && p.part_of.length ? ' · part of ' + p.part_of.join(', ') : ''), 'note'),
+    body.append(back, el('h3', p.label));
+    if (p.also_recorded_as && p.also_recorded_as.length) body.append(el('div', 'Also recorded as: ' + p.also_recorded_as.join(', '), 'note'));
+    body.append(el('div', p.id + (p.part_of && p.part_of.length ? ' · part of ' + p.part_of.join(', ') : ''), 'note'),
       el('div', p.documents + ' matching documents · ' + p.per_1000_corpus_documents + ' per 1000 of the ' + p.corpus_documents + ' documents that mention it'));
     const list = el('div', 'Loading documents…', 'note');
     body.append(list);
@@ -526,7 +530,7 @@ window.addEventListener('unhandledrejection', function (e) { window.__diag('unha
   resize(); draw();
   status('Connecting to the chat app…');
   request('ui/initialize', {
-    appInfo: { name: 'globalise-map-viewer', version: '0.1.0' },
+    appInfo: { name: 'globalise-map-viewer', version: '0.2.0' },
     appCapabilities: { availableDisplayModes: ['inline', 'fullscreen'] },
     protocolVersion: PROTOCOL_VERSION,
   }).then((result) => {

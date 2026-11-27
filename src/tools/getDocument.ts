@@ -4,6 +4,7 @@ import { config } from '../config.ts';
 import { parseAnnotated, plainText, renderSegments, summariseEntities, type TextFormat } from '../globalise/annotatedText.ts';
 import { esSearch } from '../globalise/es.ts';
 import { documentScanIds, parseId, uriFor, viewerUrlForDocument, viewerUrlForScan } from '../globalise/ids.ts';
+import { placeGraph, withPrefLabels } from '../globalise/places.ts';
 import { labelsFor } from '../globalise/lookup.ts';
 import { locateQuote, scanTranscription } from '../globalise/scan.ts';
 import { conceptLabels } from '../globalise/concepts.ts';
@@ -53,7 +54,7 @@ export function registerGetDocument(server: McpServer) {
 
       const entities = summariseEntities(segments, 30);
       const [placeLabels, roleLabels] = await Promise.all([
-        labelsFor('places', entities.places.map((p) => p.placeId)),
+        preferredPlaceLabels(entities.places.map((p) => p.placeId)),
         conceptLabels(entities.roles.map((r) => r.conceptId)),
       ]);
 
@@ -120,4 +121,12 @@ async function locate(scanIds: string[], quote: string) {
     ...(scanIds.length > MAX_LOCATE_SCANS ? { note: `Only the first ${MAX_LOCATE_SCANS} of ${scanIds.length} scans were searched.` } : {}),
     matches: matches.slice(0, 5),
   };
+}
+
+/** Preferred labels of places (the index lists spellings alphabetically, so its first title is not the name). */
+async function preferredPlaceLabels(ids: string[]): Promise<Map<string, string | null>> {
+  const graph = await placeGraph().catch(() => null);
+  if (!graph) return labelsFor('places', ids);
+  await withPrefLabels(graph, ids);
+  return new Map(ids.map((id) => [id, graph.nodes.get(id)?.label ?? null]));
 }

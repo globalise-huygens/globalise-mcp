@@ -5,7 +5,7 @@ import { renderFragment, viewerHitQuery, viewerSnippet, type TextFormat } from '
 import { esSearch } from '../globalise/es.ts';
 import { uriFor, viewerUrlForDocument } from '../globalise/ids.ts';
 import { mentionsForDocuments, topEntries, type MentionTally } from '../globalise/mentions.ts';
-import { placeGraph, placesInDocuments, type DocumentPlace, type PlaceGraph } from '../globalise/places.ts';
+import { labelsNote, placeGraph, placesInDocuments, withPrefLabels, type DocumentPlace, type PlaceGraph } from '../globalise/places.ts';
 import type { Chip } from '../globalise/query.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 import { buildFromArgs, documentFilterShape, type DocumentFilterArgs } from './documentFilters.ts';
@@ -110,6 +110,7 @@ export function registerSearchDocuments(server: McpServer) {
         ? await Promise.all([placesInDocuments(response.hits.hits.map((h) => h._source.id)), placeGraph().catch(() => null)])
         : [new Map<string, DocumentPlace[]>(), null];
       const searched = searchedPlaceIds(built.chips);
+      const unlabelled = graph ? await withPrefLabels(graph, [...docPlaces.values()].flatMap((list) => list.slice(0, placesPer).map((p) => p.id))) : 0;
 
       const results = response.hits.hits.map((hit) => {
         const s = hit._source;
@@ -147,10 +148,11 @@ export function registerSearchDocuments(server: McpServer) {
         ...(countMentions ? { mentions_on_this_page: [...mentions.values()].reduce((s, t) => s + t.total, 0) } : {}),
         results,
         ...(args.geojson && graph ? { geojson: pageGeojson(results, graph) } : {}),
+        ...labelsNote(unlabelled),
         ...(placesPer > 0
           ? {
               places_note:
-                'places = places linked to mentions anywhere in the document (automatic linking; wrong and missing links occur), most mentioned first; searched = matched by a place, within: or region criterion of this search. Places without lat/lon have no coordinates. spellings show what was actually linked: an implausible spelling (e.g. "Jndien" linked to Londen) is a wrong link.',
+                'places = places linked to mentions anywhere in the document (automatic linking; wrong and missing links occur), most mentioned first; searched = matched by a place, within: or region criterion of this search. Places without lat/lon have no coordinates. label = the preferred label of the place record (often a modern name, e.g. Jakarta for Batavia); spellings show what was actually linked: an implausible spelling (e.g. "Jndien" linked to Londen) is a wrong link.',
             }
           : {}),
         next_steps: results.length

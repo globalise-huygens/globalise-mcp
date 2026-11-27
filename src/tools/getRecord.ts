@@ -5,7 +5,7 @@ import { variantsFor } from '../globalise/lookup.ts';
 import { countBody, countOf, esMsearch, esSearch } from '../globalise/es.ts';
 import { manifestUri, objectCardUrl, parseId, uriFor, viewerUrlForDocument } from '../globalise/ids.ts';
 import { recordProperty, summariseRecord } from '../globalise/linkedart.ts';
-import { broaderChains, placeGraph } from '../globalise/places.ts';
+import { broaderChains, placeGraph, withPrefLabels } from '../globalise/places.ts';
 import { inventoryInfo } from '../globalise/scan.ts';
 import { fetchJson } from '../util/http.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
@@ -64,14 +64,17 @@ export function registerGetRecord(server: McpServer) {
       // spellings) are in the search index, so merge those in.
       const index = INDEX_FOR_KIND[parsed.kind];
       const indexNames = index ? await variantsFor(index, parsed.id) : [];
-      const names = [...new Set([...indexNames, ...summary.names.filter((n) => !/ Identified by |^(Person|GLOB|ORG|Polity|gzm)_/.test(n))])];
+      const recordNames = summary.names.filter((n) => !/ Identified by |^(Person|GLOB|ORG|Polity|gzm)_/.test(n));
+      // Places: preferred label (the record's _label) first; the index lists spellings alphabetically.
+      const names = [...new Set(parsed.kind === 'place' && summary.label ? [summary.label, ...indexNames, ...recordNames] : [...indexNames, ...recordNames])];
       const usage = await usageFor(parsed.kind, parsed.id, names);
       const place = parsed.kind === 'place' ? await placeContext(parsed.id) : null;
 
       return json({
         kind: parsed.kind,
         ...summary,
-        label: indexNames[0] ?? summary.label,
+        // Places: the record's _label is the preferred label; the index lists spellings alphabetically.
+        label: parsed.kind === 'place' ? (summary.label ?? indexNames[0]) : (indexNames[0] ?? summary.label),
         names,
         ...(usage ? { corpus_usage: usage } : {}),
         ...(place ? { place_context: place } : {}),
@@ -161,6 +164,7 @@ async function placeContext(id: string): Promise<Record<string, unknown> | null>
   const graph = await placeGraph().catch(() => null);
   const node = graph?.nodes.get(id);
   if (!graph || !node) return null;
+  await withPrefLabels(graph, [...node.parents, ...node.overlaps, ...broaderChains(graph, id).flatMap((c) => c.chain.map((n) => n.id))]);
   const name = (p: string) => `${graph.nodes.get(p)?.label ?? p} (${p})`;
   return {
     ...(node.point ? { coordinates: node.point } : { coordinates: null }),

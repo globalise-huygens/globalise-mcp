@@ -11,7 +11,9 @@ import {
   PLACE_SOURCE,
   placeCountsInResult,
   placeGraph,
+  labelsNote,
   regionOf,
+  withPrefLabels,
   resolvePlace,
   type PlaceGraph,
   type PlaceNode,
@@ -58,6 +60,7 @@ export function registerMapDocuments(server: McpServer) {
       const describe = ({ node, documents }: { node: PlaceNode; documents: number }) => ({
         id: node.id,
         label: node.label,
+        ...(node.names.length > 1 ? { also_recorded_as: node.names.filter((n) => n !== node.label).slice(0, 4) } : {}),
         ...(node.point ? { lat: node.point.lat, lon: node.point.lon } : {}),
         documents,
         corpus_documents: node.documents,
@@ -68,6 +71,8 @@ export function registerMapDocuments(server: McpServer) {
       const maxPlaces = args.max_places ?? 300;
       const placed = rows.filter((r) => r.node.point);
       const unplaced = rows.filter((r) => !r.node.point);
+      const shown = [...placed.slice(0, maxPlaces), ...unplaced.slice(0, 15)].map((r) => r.node);
+      const unlabelled = await withPrefLabels(graph, shown.flatMap((n) => [n.id, ...n.parents]));
       const filters = Object.fromEntries(FILTER_KEYS.filter((k) => args[k] !== undefined).map((k) => [k, args[k]]));
 
       return json({
@@ -80,12 +85,13 @@ export function registerMapDocuments(server: McpServer) {
         places: placed.slice(0, maxPlaces).map(describe),
         places_without_coordinates: { total: unplaced.length, top: unplaced.slice(0, 15).map(describe) },
         region_outline: outline(graph, args.region),
+        ...labelsNote(unlabelled),
         filters,
         query_interpretation: built.resolutions,
         ...(built.placeExplanation ? { place_search_explanation: built.placeExplanation } : {}),
         place_data_explanation: placeDataExplanation(true),
         how_to_read:
-          'Each point is one place record with coordinates; documents = matching documents whose text links a mention to it (a document mentioning several places counts at each). per_1000_corpus_documents = documents / all documents mentioning the place × 1000: compare places with it, not with raw counts. Documents that mention no linked place with coordinates are not on the map (matching_documents − documents_mentioning_a_mapped_place). The land outline is modern (Natural Earth); points are single coordinates, not boundaries.',
+          'Each point is one place record with coordinates; documents = matching documents whose text links a mention to it (a document mentioning several places counts at each). per_1000_corpus_documents = documents / all documents mentioning the place × 1000: compare places with it, not with raw counts. Documents that mention no linked place with coordinates are not on the map (matching_documents − documents_mentioning_a_mapped_place). The land outline is modern (Natural Earth); points are single coordinates, not boundaries. label = the preferred label of the place record (often a modern name, e.g. Jakarta for Batavia); also_recorded_as = other recorded spellings.',
         provenance: provenance([`${config.searchBase}/documents/_search`, PLACE_SOURCE], [...built.caveats, CAVEATS.regions, CAVEATS.coverage], [graph.indexVersion, await indexVersion('documents')]),
       });
     }),

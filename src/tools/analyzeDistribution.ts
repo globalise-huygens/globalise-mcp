@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { config } from '../config.ts';
 import { esSearch } from '../globalise/es.ts';
 import { conceptLabels } from '../globalise/concepts.ts';
-import { hasRegion, placeCountsInResult, placeGraph, regionOf, type PlaceNode } from '../globalise/places.ts';
+import { hasRegion, placeCountsInResult, placeGraph, regionOf, withPrefLabels, type PlaceNode } from '../globalise/places.ts';
 import { CAVEATS, indexVersion, json, provenance, READ_ONLY, safe } from './common.ts';
 import { buildFromArgs, documentFilterShape, type DocumentFilterArgs } from './documentFilters.ts';
 
@@ -170,9 +170,9 @@ async function placeDistribution(query: Record<string, unknown>, args: Args, top
   const graph = await placeGraph();
   const candidates: PlaceNode[] = hasRegion(args.region) ? regionOf(graph, args.region).linked : [...graph.nodes.values()].filter((n) => n.documents > 0);
   const counts = await placeCountsInResult(query, candidates);
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, top)
+  const topEntries = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, top);
+  await withPrefLabels(graph, topEntries.flatMap(([id]) => [id, ...(graph.nodes.get(id)?.parents ?? [])]));
+  return topEntries
     .map(([id, count]) => {
       const node = graph.nodes.get(id)!;
       return {
