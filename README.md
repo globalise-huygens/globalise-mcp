@@ -77,7 +77,8 @@ Once published to npm, this becomes `npx -y @globalise/mcp`.
 pnpm start:http      # serves http://localhost:3001/mcp, health check at /healthz
 ```
 
-Users add the URL (`https://globalise.nl/mcp` once hosted) as a custom/remote connector in their client.
+The hosted server is at `https://mcp.globalise.nl/mcp` (health check: `https://mcp.globalise.nl/healthz`).
+Users add that URL as a custom/remote connector in their client.
 The endpoint is stateless, read-only and needs no authentication.
 
 ## Architecture
